@@ -21,7 +21,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
-            align-items: flex-start; /* Alinhamento pelo topo */
+            align-items: flex-start;
         }
 
         .section {
@@ -30,7 +30,7 @@
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             min-width: 300px;
-            width: fit-content; /* Ajusta ao conteúdo */
+            width: fit-content;
         }
 
         table {
@@ -91,7 +91,7 @@
             <input type="number" id="rebocador-capacity" value="6"><br><br>
 
             <button onclick="simulate()">Simular</button>
-            <button onclick="clearStorage()">Limpar Armazenamento Local</button>
+            <button onclick="clearLocalStorage()">Limpar Dados</button>
         </div>
 
         <!-- Resultado -->
@@ -130,7 +130,9 @@
                 <input type="number" id="speed-${machineCounter}" value="212"><br><br>
             `;
             document.getElementById('setores').appendChild(setorContainer);
-            saveToLocalStorage(); // Salva as alterações no localStorage
+
+            // Salva no localStorage
+            saveToLocalStorage();
         } else {
             alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
         }
@@ -145,7 +147,7 @@
         let setorConsumptions = [];
 
         // Calcular o número de ciclos necessários para 20 minutos com base na fórmula aprimorada
-        cycleThreshold = Math.ceil((20 / cycleTime) + 1);  // Fórmula: 20 / ciclo + 1, arredondado para maior
+        cycleThreshold = Math.ceil((20 / cycleTime) + 1);
 
         // Loop para calcular o consumo de cada máquina
         for (let i = 1; i <= machineCounter; i++) {
@@ -156,10 +158,8 @@
             totalDemand += consumption;
         }
 
-        // Capacidade do rebocador (bobinas/min)
         const rebocadorCapacityPerMinute = rebocadorCapacity / cycleTime;
 
-        // Verificação de capacidade
         const resultsDiv = document.getElementById('results');
         if (totalDemand > rebocadorCapacityPerMinute) {
             resultsDiv.innerHTML = `
@@ -170,16 +170,14 @@
             return;
         }
 
-        // Planejamento inicial das viagens
         let viagens = [];
-        let reservas = Array(machineCounter).fill(0); // Reserva para cada máquina
-        let totalPerMachine = Array(machineCounter).fill(0); // Total por máquina
+        let reservas = Array(machineCounter).fill(0);
+        let totalPerMachine = Array(machineCounter).fill(0);
 
-        for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
-            let viagem = Array(machineCounter).fill(0); // Viagem para cada máquina
+        for (let t = 0; t < 18 * 60; t += cycleTime) {
+            let viagem = Array(machineCounter).fill(0);
             let remainingCapacity = rebocadorCapacity;
 
-            // Lógica de distribuição com prioridades e reservas
             for (let i = 0; i < machineCounter; i++) {
                 const consumoSetor = setorConsumptions[i];
                 const needed = Math.max(0, consumoSetor * cycleTime - reservas[i]);
@@ -188,24 +186,19 @@
                 reservas[i] += bobinas - consumoSetor * cycleTime;
                 remainingCapacity -= bobinas;
 
-                // Acumula os totais
                 totalPerMachine[i] += bobinas;
             }
 
-            // Incrementa o contador de ciclos
             cycleCounter++;
 
-            // Se o número de ciclos atingir o cicloThreshold, zera a linha (substitui "0" por "F1")
             if (cycleCounter >= cycleThreshold) {
-                // Substitui o valor da viagem com "F1" nas linhas zeradas
-                viagem.fill("F1"); // Zera todos os valores da viagem com "F1"
-                cycleCounter = 0; // Reseta o contador de ciclos
+                viagem.fill("F1");
+                cycleCounter = 0;
             }
 
             viagens.push(viagem);
         }
 
-        // Renderização dos resultados
         resultsDiv.innerHTML = `
             <p><strong>O rebocador atende à demanda.</strong></p>
             <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
@@ -223,49 +216,62 @@
                         <tr>
                             <td>${index + 1}</td>
                             ${viagem.map(bobinas => `<td>${bobinas}</td>`).join('')}
-                            <td>Fase ${cycleCounter}</td>
+                            <td><button onclick="toggleCronometro(${index})">Atender</button></td>
                         </tr>
                     `).join('')}
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td><strong>Total</strong></td>
+                        ${totalPerMachine.map(total => `<td><strong>${total}</strong></td>`).join('')}
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         `;
-        saveToLocalStorage(); // Salva as alterações no localStorage
+
+        const rows = document.querySelectorAll('table tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            for (let i = 1; i < cells.length - 1; i++) {
+                const value = cells[i].textContent.trim();
+                if (value === "F1") {
+                    cells[i].style.backgroundColor = '#FF0000'; // Linha F1
+                }
+            }
+        });
+
+        // Salva no localStorage
+        saveToLocalStorage();
     }
 
-    // Função para salvar dados no localStorage
+    // Função para salvar no localStorage
     function saveToLocalStorage() {
-        const state = {
-            machineCounter,
+        const data = {
             machineNames,
-            rebocadorCapacity: document.getElementById('rebocador-capacity').value,
-            cycleTime: document.getElementById('cycle-time').value,
-            viagens: viagens, // Salva os dados das viagens
+            rebocadorCapacity: parseFloat(document.getElementById('rebocador-capacity').value),
+            cycleTime: parseFloat(document.getElementById('cycle-time').value),
         };
-        localStorage.setItem('logisticState', JSON.stringify(state));
+        localStorage.setItem('logisticsData', JSON.stringify(data));
     }
 
     // Função para limpar o localStorage
-    function clearStorage() {
-        localStorage.removeItem('logisticState');
-        alert("Armazenamento local limpo!");
-        window.location.reload(); // Recarga a página para reiniciar os dados
+    function clearLocalStorage() {
+        localStorage.removeItem('logisticsData');
+        alert("Dados limpos!");
+        location.reload();
     }
 
-    // Função para carregar dados do localStorage
-    function loadFromLocalStorage() {
-        const state = JSON.parse(localStorage.getItem('logisticState'));
-        if (state) {
-            machineCounter = state.machineCounter;
-            machineNames = state.machineNames;
-            document.getElementById('rebocador-capacity').value = state.rebocadorCapacity;
-            document.getElementById('cycle-time').value = state.cycleTime;
-            viagens = state.viagens;
+    // Carregar dados do localStorage
+    window.onload = function() {
+        const storedData = localStorage.getItem('logisticsData');
+        if (storedData) {
+            const data = JSON.parse(storedData);
+            document.getElementById('rebocador-capacity').value = data.rebocadorCapacity;
+            document.getElementById('cycle-time').value = data.cycleTime;
+            machineNames = data.machineNames;
         }
-    }
-
-    // Carregar dados ao iniciar
-    window.onload = loadFromLocalStorage;
+    };
 </script>
-
 </body>
 </html>
