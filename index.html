@@ -225,16 +225,18 @@
         `;
 
         // Aplicar a coloração azul para células com valores diferentes de "F1"
-        const rows = document.querySelectorAll('table tbody tr');
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            for (let i = 1; i < cells.length - 1; i++) {  
-                const value = cells[i].textContent;
-                if (value !== "F1") {
-                    cells[i].style.backgroundColor = 'blue'; 
-                }
-            }
-        });
+const rows = document.querySelectorAll('table tbody tr');
+rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    for (let i = 1; i < cells.length - 1; i++) {  
+        const value = cells[i].textContent;
+        if (value === "F1") {
+            cells[i].style.backgroundColor = 'yellow'; 
+        } else if (value !== "0") {
+            cells[i].style.backgroundColor = 'orange'; 
+        }
+    }
+});
     }
 
     // Função para alternar o cronômetro de atendimento
