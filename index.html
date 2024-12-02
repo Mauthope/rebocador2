@@ -99,7 +99,7 @@
     let cronometroStartTime = null;
     let viagemTimes = [];
 
-    // Adiciona máquina fixa "F1"
+    // Função para adicionar nova máquina
     function addMachine() {
         // Solicita o nome da máquina
         const machineName = prompt("Digite o nome da nova máquina:");
@@ -130,12 +130,7 @@
         let totalDemand = 0;
         let setorConsumptions = [];
 
-        // F1 - Máquina fixa com takt de 10 bobinas por hora (0,5 bobinas por minuto)
-        const F1Takt = 0.5; // 0,5 bobinas por minuto
-        setorConsumptions.push(F1Takt);
-        totalDemand += F1Takt;
-
-        // Loop para calcular o consumo das outras máquinas
+        // Loop para calcular o consumo de cada máquina
         for (let i = 1; i <= machineCounter; i++) {
             const length = parseFloat(document.getElementById(`length-${i}`).value);
             const speed = parseFloat(document.getElementById(`speed-${i}`).value);
@@ -160,22 +155,21 @@
 
         // Planejamento inicial das viagens
         let viagens = [];
-        let reservas = Array(machineCounter + 1).fill(0); // Reserva para cada máquina (F1 + máquinas adicionadas)
-        let totalPerMachine = Array(machineCounter + 1).fill(0); // Total por máquina
+        let reservas = Array(machineCounter).fill(0); // Reserva para cada máquina
+        let totalPerMachine = Array(machineCounter).fill(0); // Total por máquina
 
         for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
-            let viagem = Array(machineCounter + 1).fill(0); // Viagem para cada máquina (F1 + máquinas)
-            let remainingCapacity = rebocadorCapacity;
-
-            // Verifica se é o momento de atender a máquina F1 (a cada 20 minutos)
-            if (t % 20 === 0) {
-                // A cada 20 minutos, o rebocador leva a capacidade total para F1
-                viagem[0] = Math.min(remainingCapacity, rebocadorCapacity); // F1 recebe o total da capacidade
-                remainingCapacity -= viagem[0]; // Atualiza a capacidade restante
+            if (t % (20 * 60) === 0) { // A cada 20 minutos (em segundos), o rebocador pausa
+                // Zera a linha de atendimento
+                viagens.push(Array(machineCounter).fill(0)); 
+                continue; // Pula para o próximo ciclo de 20 minutos
             }
 
+            let viagem = Array(machineCounter).fill(0); // Viagem para cada máquina
+            let remainingCapacity = rebocadorCapacity;
+
             // Lógica de distribuição com prioridades e reservas
-            for (let i = 1; i <= machineCounter; i++) {
+            for (let i = 0; i < machineCounter; i++) {
                 const consumoSetor = setorConsumptions[i];
                 const needed = Math.max(0, consumoSetor * cycleTime - reservas[i]);
                 const bobinas = Math.min(remainingCapacity, Math.ceil(needed));
@@ -261,6 +255,7 @@
         button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
     }
 </script>
+
 
 
 </body>
