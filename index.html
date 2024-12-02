@@ -229,14 +229,15 @@ const rows = document.querySelectorAll('table tbody tr');
 rows.forEach(row => {
     const cells = row.querySelectorAll('td');
     for (let i = 1; i < cells.length - 1; i++) {  
-        const value = cells[i].textContent;
+        const value = cells[i].textContent.trim();  // Usando trim() para evitar espaços extras
         if (value === "F1") {
-            cells[i].style.backgroundColor = 'yellow'; 
+            cells[i].style.backgroundColor = 'yellow';  // Cor amarela se for "F1"
         } else if (value !== "0") {
-            cells[i].style.backgroundColor = 'orange'; 
+            cells[i].style.backgroundColor = 'blue';  // Cor azul se não for "0"
         }
     }
 });
+
     }
 
     // Função para alternar o cronômetro de atendimento
