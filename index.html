@@ -131,8 +131,8 @@
         let totalDemand = 0;
         let setorConsumptions = [];
 
-        // Calcular o número de ciclos necessários para 20 minutos
-        cycleThreshold = Math.ceil(20 / cycleTime);  // Arredondando para cima
+        // Calcular o número de ciclos necessários para 20 minutos com base na fórmula aprimorada
+        cycleThreshold = Math.ceil((20 / cycleTime) + 1);  // Fórmula: 20 / ciclo + 1, arredondado para maior
 
         // Loop para calcular o consumo de cada máquina
         for (let i = 1; i <= machineCounter; i++) {
