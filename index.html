@@ -182,14 +182,14 @@
             // Incrementa o contador de ciclos
             cycleCounter++;
 
-            // Se o número de ciclos atingir o cicloThreshold, zera a linha (substitui "0" por "F1")
+            // Se o número de ciclos atingir o cicloThreshold, coloca a linha "F1" na próxima linha
             if (cycleCounter >= cycleThreshold) {
-                // Substitui o valor da viagem com "F1" nas linhas zeradas
-                viagem.fill("F1"); // Zera todos os valores da viagem com "F1"
+                // Insere "F1" na próxima linha após o ciclo atingido
+                viagens.push(Array(machineCounter).fill("F1"));
                 cycleCounter = 0; // Reseta o contador de ciclos
+            } else {
+                viagens.push(viagem);
             }
-
-            viagens.push(viagem);
         }
 
         // Renderização dos resultados
