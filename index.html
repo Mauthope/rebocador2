@@ -120,15 +120,16 @@ button:hover {
             machineCounter++;
             machineNames.push(machineName);  // Armazena o nome da máquina
             const setorContainer = document.createElement('div');
-            setorContainer.id = setor-${machineCounter};
-            setorContainer.innerHTML = 
+            setorContainer.id = `setor-${machineCounter}`;
+            setorContainer.innerHTML = `
                 <h3>${machineName}</h3>  
                 <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
                 <input type="number" id="length-${machineCounter}" value="3000"><br><br>
                 <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
                 <input type="number" id="speed-${machineCounter}" value="212"><br><br>
-            ;
+            `;
             document.getElementById('setores').appendChild(setorContainer);
+            saveToLocalStorage(); // Salva as alterações no localStorage
         } else {
             alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
         }
@@ -147,8 +148,8 @@ button:hover {
 
         // Loop para calcular o consumo de cada máquina
         for (let i = 1; i <= machineCounter; i++) {
-            const length = parseFloat(document.getElementById(length-${i}).value);
-            const speed = parseFloat(document.getElementById(speed-${i}).value);
+            const length = parseFloat(document.getElementById(`length-${i}`).value);
+            const speed = parseFloat(document.getElementById(`speed-${i}`).value);
             const consumption = 1 / (length / speed);
             setorConsumptions.push(consumption);
             totalDemand += consumption;
@@ -160,11 +161,11 @@ button:hover {
         // Verificação de capacidade
         const resultsDiv = document.getElementById('results');
         if (totalDemand > rebocadorCapacityPerMinute) {
-            resultsDiv.innerHTML = 
+            resultsDiv.innerHTML = `
                 <p><strong>O rebocador não consegue atender à demanda total.</strong></p>
                 <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
                 <p>Capacidade do rebocador: ${rebocadorCapacityPerMinute.toFixed(2)} bobinas/min</p>
-            ;
+            `;
             return;
         }
 
@@ -204,7 +205,7 @@ button:hover {
         }
 
         // Renderização dos resultados
-        resultsDiv.innerHTML = 
+        resultsDiv.innerHTML = `
             <p><strong>O rebocador atende à demanda.</strong></p>
             <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
             <p>Capacidade do rebocador: ${rebocadorCapacityPerMinute.toFixed(2)} bobinas/min</p>
@@ -212,44 +213,44 @@ button:hover {
                 <thead>
                     <tr>
                         <th>#</th>
-                        ${machineNames.map(name => <th>${name}</th>).join('')} 
+                        ${machineNames.map(name => `<th>${name}</th>`).join('')} 
                         <th>Atendimento</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${viagens.map((viagem, index) => 
+                    ${viagens.map((viagem, index) => `
                         <tr>
                             <td>${index + 1}</td>
-                            ${viagem.map(bobinas => <td>${bobinas}</td>).join('')}
+                            ${viagem.map(bobinas => `<td>${bobinas}</td>`).join('')}
                             <td><button onclick="toggleCronometro(${index})">Atender</button></td>
-                                         <button onclick="clearLocalStorage()">Limpar Dados</button>
                         </tr>
-                    ).join('')}
+                    `).join('')}
                 </tbody>
                 <tfoot>
                     <tr>
                         <td><strong>Total</strong></td>
-                        ${totalPerMachine.map(total => <td><strong>${total}</strong></td>).join('')}
+                        ${totalPerMachine.map(total => `<td><strong>${total}</strong></td>`).join('')}
                         <td></td>
                     </tr>
                 </tfoot>
             </table>
-        ;
+        `;
 
         // Aplicar a coloração azul para células com valores diferentes de "F1"
-const rows = document.querySelectorAll('table tbody tr');
-rows.forEach(row => {
-    const cells = row.querySelectorAll('td');
-    for (let i = 1; i < cells.length - 1; i++) {  
-        const value = cells[i].textContent.trim();  // Usando trim() para evitar espaços extras
-        if (value === "F1") {
-            cells[i].style.backgroundColor = 'yellow';  // Cor amarela se for "F1"
-        } else if (value !== "0") {
-            cells[i].style.backgroundColor = 'blue';  // Cor azul se não for "0"
-        }
-    }
-});
+        const rows = document.querySelectorAll('table tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            for (let i = 1; i < cells.length - 1; i++) {  
+                const value = cells[i].textContent.trim();  // Usando trim() para evitar espaços extras
+                if (value === "F1") {
+                    cells[i].style.backgroundColor = 'yellow';  // Cor amarela se for "F1"
+                } else if (value !== "0") {
+                    cells[i].style.backgroundColor = 'blue';  // Cor azul se não for "0"
+                }
+            }
+        });
 
+        saveToLocalStorage(); // Salva as alterações no localStorage
     }
 
     // Função para alternar o cronômetro de atendimento
@@ -266,7 +267,7 @@ rows.forEach(row => {
             const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
             clearInterval(cronometroInterval);
             cronometroInterval = null;
-            atendimentoBtn.textContent = Finalizado: ${timeSpent.toFixed(2)} min;
+            atendimentoBtn.textContent = `Finalizado: ${timeSpent.toFixed(2)} min`;
             atendimentoCell.style.backgroundColor = timeSpent > parseFloat(document.getElementById('cycle-time').value) ? 'red' : 'green';
         }
     }
@@ -274,61 +275,43 @@ rows.forEach(row => {
     // Função para atualizar o cronômetro
     function updateCronometro(button) {
         const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-        button.textContent = Em andamento: ${timeSpent.toFixed(2)} min;
+        button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
     }
+
     // Função para salvar os dados no localStorage
-    function saveData() {
-        const rebocadorCapacity = document.getElementById('rebocador-capacity').value;
-        const cycleTime = document.getElementById('cycle-time').value;
-        const machineData = [];
-
-        for (let i = 1; i <= machineCounter; i++) {
-            const length = document.getElementById(`length-${i}`).value;
-            const speed = document.getElementById(`speed-${i}`).value;
-            machineData.push({ length, speed });
-        }
-
+    function saveToLocalStorage() {
         const data = {
-            rebocadorCapacity,
-            cycleTime,
-            machineData
+            machineNames: machineNames,
+            machineCounter: machineCounter,
+            cycleTime: parseFloat(document.getElementById('cycle-time').value),
+            rebocadorCapacity: parseFloat(document.getElementById('rebocador-capacity').value),
         };
-
-        localStorage.setItem('planningData', JSON.stringify(data)); // Salva os dados no localStorage
+        localStorage.setItem('logisticsData', JSON.stringify(data));
     }
 
     // Função para carregar os dados do localStorage
-    function loadData() {
-        const storedData = localStorage.getItem('planningData');
-        if (storedData) {
-            const data = JSON.parse(storedData);
-            document.getElementById('rebocador-capacity').value = data.rebocadorCapacity;
-            document.getElementById('cycle-time').value = data.cycleTime;
-
-            data.machineData.forEach((machine, index) => {
-                if (index + 1 <= machineCounter) {
-                    document.getElementById(`length-${index + 1}`).value = machine.length;
-                    document.getElementById(`speed-${index + 1}`).value = machine.speed;
-                }
-            });
+    function loadFromLocalStorage() {
+        const savedData = localStorage.getItem('logisticsData');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            machineNames = data.machineNames || [];
+            machineCounter = data.machineCounter || 0;
+            document.getElementById('cycle-time').value = data.cycleTime || 0;
+            document.getElementById('rebocador-capacity').value = data.rebocadorCapacity || 0;
         }
     }
 
     // Função para limpar o localStorage
     function clearLocalStorage() {
-        localStorage.removeItem('planningData'); // Remove os dados do localStorage
+        localStorage.removeItem('logisticsData');
         alert('Dados limpos do localStorage');
+        window.location.reload();  // Recarrega a página
     }
 
-    // Salvar os dados ao clicar em "Simular"
-    function simulate() {
-        saveData(); // Salva os dados no localStorage
-        // ... (restante do código de simulação)
-    }
-
-    // Carregar os dados ao iniciar a página
-    window.onload = loadData; // Carrega os dados ao carregar a página                      
+    // Carregar os dados do localStorage ao carregar a página
+    window.onload = loadFromLocalStorage;
 </script>
+
 
 
 
