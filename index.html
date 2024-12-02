@@ -6,71 +6,71 @@
     <title>Planejamento Logístico - Rebocador</title>
     <style>
         body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f4f4f9;
-    color: #333;
-}
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f4f4f9;
+            color: #333;
+        }
 
-h1, h2 {
-    text-align: center;
-    color: #4CAF50;
-}
+        h1, h2 {
+            text-align: center;
+            color: #4CAF50;
+        }
 
-.container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    align-items: flex-start; /* Alinhamento pelo topo */
-}
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-start; /* Alinhamento pelo topo */
+        }
 
-.section {
-    background: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    min-width: 300px;
-    width: fit-content; /* Ajusta ao conteúdo */
-}
+        .section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            min-width: 300px;
+            width: fit-content; /* Ajusta ao conteúdo */
+        }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
 
-th, td {
-    text-align: center;
-    border: 1px solid #ddd;
-    padding: 8px;
-}
+        th, td {
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
 
-th {
-    background: #4CAF50;
-    color: white;
-}
+        th {
+            background: #4CAF50;
+            color: white;
+        }
 
-button {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-radius: 5px;
-}
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
 
-button:hover {
-    background: #45a049;
-}
+        button:hover {
+            background: #45a049;
+        }
 
-.btn-group {
-    display: flex;
-    justify-content: space-around;
-}
+        .btn-group {
+            display: flex;
+            justify-content: space-around;
+        }
 
-.active {
-    background-color: #2196F3;
-}
+        .active {
+            background-color: #2196F3;
+        }
     </style>
 </head>
 <body>
@@ -91,6 +91,7 @@ button:hover {
             <input type="number" id="rebocador-capacity" value="6"><br><br>
 
             <button onclick="simulate()">Simular</button>
+            <button onclick="clearLocalStorage()">Limpar Dados</button>
         </div>
 
         <!-- Resultado -->
@@ -112,6 +113,26 @@ button:hover {
     let cycleCounter = 0;  // Contador de ciclos do rebocador
     let cycleThreshold = 0; // Número de ciclos após o qual a linha será zerada
 
+    // Verifica se há dados salvos no localStorage e carrega
+    window.onload = function() {
+        const savedMachines = localStorage.getItem('machineNames');
+        if (savedMachines) {
+            machineNames = JSON.parse(savedMachines);
+            machineCounter = machineNames.length;
+            loadMachines();
+        }
+
+        const savedCycleTime = localStorage.getItem('cycleTime');
+        if (savedCycleTime) {
+            document.getElementById('cycle-time').value = savedCycleTime;
+        }
+
+        const savedCapacity = localStorage.getItem('rebocadorCapacity');
+        if (savedCapacity) {
+            document.getElementById('rebocador-capacity').value = savedCapacity;
+        }
+    };
+
     // Função para adicionar nova máquina
     function addMachine() {
         const machineName = prompt("Digite o nome da nova máquina:");
@@ -119,6 +140,7 @@ button:hover {
         if (machineName) {
             machineCounter++;
             machineNames.push(machineName);  // Armazena o nome da máquina
+            saveData(); // Salva no localStorage
             const setorContainer = document.createElement('div');
             setorContainer.id = `setor-${machineCounter}`;
             setorContainer.innerHTML = `
@@ -212,72 +234,51 @@ button:hover {
                 <thead>
                     <tr>
                         <th>#</th>
-                        ${machineNames.map(name => `<th>${name}</th>`).join('')} 
-                        <th>Atendimento</th>
+                        ${machineNames.map(name => `<th>${name}</th>`).join('')}
                     </tr>
                 </thead>
                 <tbody>
                     ${viagens.map((viagem, index) => `
                         <tr>
                             <td>${index + 1}</td>
-                            ${viagem.map(bobinas => `<td>${bobinas}</td>`).join('')}
-                            <td><button onclick="toggleCronometro(${index})">Atender</button></td>
+                            ${viagem.map(item => `<td>${item}</td>`).join('')}
                         </tr>
                     `).join('')}
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td><strong>Total</strong></td>
-                        ${totalPerMachine.map(total => `<td><strong>${total}</strong></td>`).join('')}
-                        <td></td>
-                    </tr>
-                </tfoot>
             </table>
         `;
-
-        // Aplicar a coloração azul para células com valores diferentes de "F1"
-const rows = document.querySelectorAll('table tbody tr');
-rows.forEach(row => {
-    const cells = row.querySelectorAll('td');
-    for (let i = 1; i < cells.length - 1; i++) {  
-        const value = cells[i].textContent.trim();  // Usando trim() para evitar espaços extras
-        if (value === "F1") {
-            cells[i].style.backgroundColor = 'yellow';  // Cor amarela se for "F1"
-        } else if (value !== "0") {
-            cells[i].style.backgroundColor = 'blue';  // Cor azul se não for "0"
-        }
-    }
-});
-
     }
 
-    // Função para alternar o cronômetro de atendimento
-    function toggleCronometro(index) {
-        const viagem = document.querySelectorAll('table tr')[index + 1];
-        const atendimentoBtn = viagem.querySelector('button');
-        const atendimentoCell = viagem.querySelector('td:last-child');
-
-        if (atendimentoBtn.textContent === "Atender") {
-            atendimentoBtn.textContent = "Finalizar";
-            cronometroStartTime = Date.now();
-            cronometroInterval = setInterval(() => updateCronometro(atendimentoBtn), 1000);
-        } else {
-            const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-            clearInterval(cronometroInterval);
-            cronometroInterval = null;
-            atendimentoBtn.textContent = `Finalizado: ${timeSpent.toFixed(2)} min`;
-            atendimentoCell.style.backgroundColor = timeSpent > parseFloat(document.getElementById('cycle-time').value) ? 'red' : 'green';
-        }
+    // Função para salvar no localStorage
+    function saveData() {
+        localStorage.setItem('machineNames', JSON.stringify(machineNames));
+        localStorage.setItem('cycleTime', document.getElementById('cycle-time').value);
+        localStorage.setItem('rebocadorCapacity', document.getElementById('rebocador-capacity').value);
     }
 
-    // Função para atualizar o cronômetro
-    function updateCronometro(button) {
-        const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-        button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
+    // Função para carregar as máquinas
+    function loadMachines() {
+        document.getElementById('setores').innerHTML = ''; // Limpa os setores antes de recarregar
+        machineNames.forEach((name, index) => {
+            const setorContainer = document.createElement('div');
+            setorContainer.innerHTML = `
+                <h3>${name}</h3>  
+                <label for="length-${index + 1}">Comprimento de bobina (m):</label>
+                <input type="number" id="length-${index + 1}" value="3000"><br><br>
+                <label for="speed-${index + 1}">Velocidade de consumo (m/min):</label>
+                <input type="number" id="speed-${index + 1}" value="212"><br><br>
+            `;
+            document.getElementById('setores').appendChild(setorContainer);
+        });
+    }
+
+    // Função para limpar localStorage
+    function clearLocalStorage() {
+        localStorage.clear();
+        machineNames = [];
+        loadMachines(); // Recarrega as máquinas
+        alert("Dados limpos.");
     }
 </script>
-
-
-
 </body>
 </html>
