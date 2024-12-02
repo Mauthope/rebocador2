@@ -91,7 +91,7 @@
             <input type="number" id="rebocador-capacity" value="6"><br><br>
 
             <button onclick="simulate()">Simular</button>
-            <button onclick="clearLocalStorage()">Limpar Dados</button>
+            <button onclick="clearStorage()">Limpar Armazenamento Local</button>
         </div>
 
         <!-- Resultado -->
@@ -113,26 +113,6 @@
     let cycleCounter = 0;  // Contador de ciclos do rebocador
     let cycleThreshold = 0; // Número de ciclos após o qual a linha será zerada
 
-    // Verifica se há dados salvos no localStorage e carrega
-    window.onload = function() {
-        const savedMachines = localStorage.getItem('machineNames');
-        if (savedMachines) {
-            machineNames = JSON.parse(savedMachines);
-            machineCounter = machineNames.length;
-            loadMachines();
-        }
-
-        const savedCycleTime = localStorage.getItem('cycleTime');
-        if (savedCycleTime) {
-            document.getElementById('cycle-time').value = savedCycleTime;
-        }
-
-        const savedCapacity = localStorage.getItem('rebocadorCapacity');
-        if (savedCapacity) {
-            document.getElementById('rebocador-capacity').value = savedCapacity;
-        }
-    };
-
     // Função para adicionar nova máquina
     function addMachine() {
         const machineName = prompt("Digite o nome da nova máquina:");
@@ -140,7 +120,6 @@
         if (machineName) {
             machineCounter++;
             machineNames.push(machineName);  // Armazena o nome da máquina
-            saveData(); // Salva no localStorage
             const setorContainer = document.createElement('div');
             setorContainer.id = `setor-${machineCounter}`;
             setorContainer.innerHTML = `
@@ -151,6 +130,7 @@
                 <input type="number" id="speed-${machineCounter}" value="212"><br><br>
             `;
             document.getElementById('setores').appendChild(setorContainer);
+            saveToLocalStorage(); // Salva as alterações no localStorage
         } else {
             alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
         }
@@ -234,51 +214,58 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        ${machineNames.map(name => `<th>${name}</th>`).join('')}
+                        ${machineNames.map(name => `<th>${name}</th>`).join('')} 
+                        <th>Atendimento</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${viagens.map((viagem, index) => `
                         <tr>
                             <td>${index + 1}</td>
-                            ${viagem.map(item => `<td>${item}</td>`).join('')}
+                            ${viagem.map(bobinas => `<td>${bobinas}</td>`).join('')}
+                            <td>Fase ${cycleCounter}</td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
         `;
+        saveToLocalStorage(); // Salva as alterações no localStorage
     }
 
-    // Função para salvar no localStorage
-    function saveData() {
-        localStorage.setItem('machineNames', JSON.stringify(machineNames));
-        localStorage.setItem('cycleTime', document.getElementById('cycle-time').value);
-        localStorage.setItem('rebocadorCapacity', document.getElementById('rebocador-capacity').value);
+    // Função para salvar dados no localStorage
+    function saveToLocalStorage() {
+        const state = {
+            machineCounter,
+            machineNames,
+            rebocadorCapacity: document.getElementById('rebocador-capacity').value,
+            cycleTime: document.getElementById('cycle-time').value,
+            viagens: viagens, // Salva os dados das viagens
+        };
+        localStorage.setItem('logisticState', JSON.stringify(state));
     }
 
-    // Função para carregar as máquinas
-    function loadMachines() {
-        document.getElementById('setores').innerHTML = ''; // Limpa os setores antes de recarregar
-        machineNames.forEach((name, index) => {
-            const setorContainer = document.createElement('div');
-            setorContainer.innerHTML = `
-                <h3>${name}</h3>  
-                <label for="length-${index + 1}">Comprimento de bobina (m):</label>
-                <input type="number" id="length-${index + 1}" value="3000"><br><br>
-                <label for="speed-${index + 1}">Velocidade de consumo (m/min):</label>
-                <input type="number" id="speed-${index + 1}" value="212"><br><br>
-            `;
-            document.getElementById('setores').appendChild(setorContainer);
-        });
+    // Função para limpar o localStorage
+    function clearStorage() {
+        localStorage.removeItem('logisticState');
+        alert("Armazenamento local limpo!");
+        window.location.reload(); // Recarga a página para reiniciar os dados
     }
 
-    // Função para limpar localStorage
-    function clearLocalStorage() {
-        localStorage.clear();
-        machineNames = [];
-        loadMachines(); // Recarrega as máquinas
-        alert("Dados limpos.");
+    // Função para carregar dados do localStorage
+    function loadFromLocalStorage() {
+        const state = JSON.parse(localStorage.getItem('logisticState'));
+        if (state) {
+            machineCounter = state.machineCounter;
+            machineNames = state.machineNames;
+            document.getElementById('rebocador-capacity').value = state.rebocadorCapacity;
+            document.getElementById('cycle-time').value = state.cycleTime;
+            viagens = state.viagens;
+        }
     }
+
+    // Carregar dados ao iniciar
+    window.onload = loadFromLocalStorage;
 </script>
+
 </body>
 </html>
