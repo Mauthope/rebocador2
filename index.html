@@ -99,6 +99,7 @@
     let cronometroStartTime = null;
     let viagemTimes = [];
     let cycleCounter = 0;  // Contador de ciclos do rebocador
+    let cycleThreshold = 0; // Número de ciclos após o qual a linha será zerada
 
     // Função para adicionar nova máquina
     function addMachine() {
@@ -129,6 +130,9 @@
 
         let totalDemand = 0;
         let setorConsumptions = [];
+
+        // Calcular o número de ciclos necessários para 20 minutos
+        cycleThreshold = Math.ceil(20 / cycleTime);  // Arredondando para cima
 
         // Loop para calcular o consumo de cada máquina
         for (let i = 1; i <= machineCounter; i++) {
@@ -175,10 +179,12 @@
                 totalPerMachine[i] += bobinas;
             }
 
-            // Incrementa o contador de ciclos e zera a linha a cada 20 minutos
+            // Incrementa o contador de ciclos
             cycleCounter++;
-            if (cycleCounter * cycleTime >= 20) {
-                // Zera a linha a cada múltiplo de 20 minutos
+
+            // Se o número de ciclos atingir o cicloThreshold, zera a linha
+            if (cycleCounter >= cycleThreshold) {
+                // Zera todos os valores da viagem
                 viagem.fill(0); // Zera todos os valores da viagem
                 cycleCounter = 0; // Reseta o contador de ciclos
             }
