@@ -93,24 +93,21 @@
 
 <script>
     let machineCounter = 0; // Contador para máquinas
-    let machineNames = []; // Array para armazenar os nomes das máquinas
-    let activeCronometer = null;
-    let cronometroInterval = null;
-    let cronometroStartTime = null;
-    let viagemTimes = [];
+    let machineNames = ["F1"]; // Inclui a máquina prioritária F1
+    let setorConsumptions = [10 / 60]; // Consumo fixo de 10 bobinas por hora (bobinas/min)
 
     // Função para adicionar nova máquina
     function addMachine() {
-        // Solicita o nome da máquina
         const machineName = prompt("Digite o nome da nova máquina:");
 
         if (machineName) {
             machineCounter++;
             machineNames.push(machineName);  // Armazena o nome da máquina
+            setorConsumptions.push(0); // Inicializa consumo com 0
             const setorContainer = document.createElement('div');
             setorContainer.id = `setor-${machineCounter}`;
             setorContainer.innerHTML = `
-                <h3>${machineName}</h3>  <!-- Exibe o nome da máquina -->
+                <h3>${machineName}</h3>
                 <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
                 <input type="number" id="length-${machineCounter}" value="3000"><br><br>
                 <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
@@ -124,159 +121,84 @@
 
     // Função para simular o planejamento
     function simulate() {
-    const rebocadorCapacity = parseFloat(document.getElementById('rebocador-capacity').value);
-    const cycleTime = parseFloat(document.getElementById('cycle-time').value);
+        const rebocadorCapacity = parseFloat(document.getElementById('rebocador-capacity').value);
+        const cycleTime = parseFloat(document.getElementById('cycle-time').value);
 
-    let totalDemand = 0;
-    let setorConsumptions = [];
-    let f1Index = -1;
-
-    // Identificar o índice da máquina "F1"
-    for (let i = 0; i < machineNames.length; i++) {
-        if (machineNames[i] === "F1") {
-            f1Index = i;
-            break;
+        let totalDemand = setorConsumptions[0]; // Começa com a demanda fixa da F1
+        for (let i = 1; i <= machineCounter; i++) {
+            const length = parseFloat(document.getElementById(`length-${i}`).value);
+            const speed = parseFloat(document.getElementById(`speed-${i}`).value);
+            const consumption = 1 / (length / speed);
+            setorConsumptions[i] = consumption;
+            totalDemand += consumption;
         }
-    }
 
-    if (f1Index === -1) {
-        alert("A máquina 'F1' não foi configurada.");
-        return;
-    }
+        const rebocadorCapacityPerMinute = rebocadorCapacity / cycleTime;
+        const resultsDiv = document.getElementById('results');
 
-    // Calcular consumo por máquina
-    for (let i = 1; i <= machineCounter; i++) {
-        const length = parseFloat(document.getElementById(`length-${i}`).value);
-        const speed = parseFloat(document.getElementById(`speed-${i}`).value);
-        const consumption = 1 / (length / speed);
-        setorConsumptions.push(consumption);
-        totalDemand += consumption;
-    }
+        if (totalDemand > rebocadorCapacityPerMinute) {
+            resultsDiv.innerHTML = `
+                <p><strong>O rebocador não consegue atender à demanda total.</strong></p>
+                <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
+                <p>Capacidade do rebocador: ${rebocadorCapacityPerMinute.toFixed(2)} bobinas/min</p>
+            `;
+            return;
+        }
 
-    // Capacidade do rebocador (bobinas/min)
-    const rebocadorCapacityPerMinute = rebocadorCapacity / cycleTime;
+        let viagens = [];
+        let reservas = Array(machineCounter + 1).fill(0); // Inclui reserva para F1
+        let totalPerMachine = Array(machineCounter + 1).fill(0);
 
-    // Verificação de capacidade
-    const resultsDiv = document.getElementById('results');
-    if (totalDemand > rebocadorCapacityPerMinute) {
+        for (let t = 0; t < 18 * 60; t += cycleTime) {
+            let viagem = Array(machineCounter + 1).fill(0);
+            let remainingCapacity = rebocadorCapacity;
+
+            if (remainingCapacity >= 10) {
+                viagem[0] = 10; // Sempre atende F1 primeiro
+                remainingCapacity -= 10;
+                totalPerMachine[0] += 10;
+            }
+
+            for (let i = 1; i <= machineCounter; i++) {
+                const needed = Math.max(0, setorConsumptions[i] * cycleTime - reservas[i]);
+                const bobinas = Math.min(remainingCapacity, Math.ceil(needed));
+                viagem[i] = bobinas;
+                reservas[i] += bobinas - setorConsumptions[i] * cycleTime;
+                remainingCapacity -= bobinas;
+                totalPerMachine[i] += bobinas;
+            }
+
+            viagens.push(viagem);
+        }
+
         resultsDiv.innerHTML = `
-            <p><strong>O rebocador não consegue atender à demanda total.</strong></p>
+            <p><strong>O rebocador atende à demanda.</strong></p>
             <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
             <p>Capacidade do rebocador: ${rebocadorCapacityPerMinute.toFixed(2)} bobinas/min</p>
-        `;
-        return;
-    }
-
-    // Planejamento inicial das viagens
-    let viagens = [];
-    let reservas = Array(machineCounter).fill(0); // Reserva para cada máquina
-    let totalPerMachine = Array(machineCounter).fill(0); // Total por máquina
-
-    for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
-        let viagem = Array(machineCounter).fill(0); // Viagem para cada máquina
-        let remainingCapacity = rebocadorCapacity;
-
-        // Prioridade para "F1"
-        if (t % (60 / (setorConsumptions[f1Index] * cycleTime)) === 0) {
-            const f1Needed = Math.min(remainingCapacity, Math.ceil(setorConsumptions[f1Index] * cycleTime - reservas[f1Index]));
-            viagem[f1Index] = f1Needed;
-            reservas[f1Index] += f1Needed - setorConsumptions[f1Index] * cycleTime;
-            totalPerMachine[f1Index] += f1Needed;
-            viagens.push(viagem);
-            continue; // Rebocador só atende "F1" neste ciclo
-        }
-
-        // Lógica de distribuição com outras máquinas
-        for (let i = 0; i < machineCounter; i++) {
-            if (i === f1Index) continue; // Ignora "F1" fora do ciclo de prioridade
-
-            const consumoSetor = setorConsumptions[i];
-            const needed = Math.max(0, consumoSetor * cycleTime - reservas[i]);
-            const bobinas = Math.min(remainingCapacity, Math.ceil(needed));
-            viagem[i] = bobinas;
-            reservas[i] += bobinas - consumoSetor * cycleTime;
-            remainingCapacity -= bobinas;
-
-            // Acumula os totais
-            totalPerMachine[i] += bobinas;
-        }
-
-        viagens.push(viagem);
-    }
-
-    // Renderização dos resultados
-    resultsDiv.innerHTML = `
-        <p><strong>O rebocador atende à demanda.</strong></p>
-        <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
-        <p>Capacidade do rebocador: ${rebocadorCapacityPerMinute.toFixed(2)} bobinas/min</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    ${machineNames.map(name => `<th>${name}</th>`).join('')}
-                    <th>Atendimento</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${viagens.map((viagem, index) => `
+            <table>
+                <thead>
                     <tr>
-                        <td>${index + 1}</td>
-                        ${viagem.map(bobinas => `<td>${bobinas}</td>`).join('')}
-                        <td><button onclick="toggleCronometro(${index})">Atender</button></td>
+                        <th>#</th>
+                        ${machineNames.map(name => `<th>${name}</th>`).join('')}
                     </tr>
-                `).join('')}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td><strong>Total</strong></td>
-                    ${totalPerMachine.map(total => `<td><strong>${total}</strong></td>`).join('')}
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
-    `;
-    // Aplicar a coloração azul para células com valores diferentes de 0
-    const rows = document.querySelectorAll('table tbody tr');
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        for (let i = 1; i < cells.length - 1; i++) {  // Ignora a primeira (número) e a última (botão)
-            const value = parseFloat(cells[i].textContent);
-            if (value !== 0) {
-                cells[i].style.backgroundColor = 'blue'; // Aplica o fundo azul
-            }
-        }
-    });
-}
-
-    // Função para alternar o cronômetro de atendimento
-    function toggleCronometro(index) {
-        const viagem = document.querySelectorAll('table tr')[index + 1];
-        const atendimentoBtn = viagem.querySelector('button');
-        const atendimentoCell = viagem.querySelector('td:last-child');
-
-        if (atendimentoBtn.textContent === "Atender") {
-            // Iniciar cronômetro
-            atendimentoBtn.textContent = "Finalizar";
-            cronometroStartTime = Date.now();
-            cronometroInterval = setInterval(() => updateCronometro(atendimentoBtn), 1000);
-        } else {
-            // Finalizar cronômetro
-            const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-            clearInterval(cronometroInterval);
-            cronometroInterval = null;
-            atendimentoBtn.textContent = `Finalizado: ${timeSpent.toFixed(2)} min`;
-            atendimentoCell.style.backgroundColor = timeSpent > parseFloat(document.getElementById('cycle-time').value) ? 'red' : 'green';
-        }
-    }
-
-    // Função para atualizar o cronômetro
-    function updateCronometro(button) {
-        const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-        button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
+                </thead>
+                <tbody>
+                    ${viagens.map((viagem, index) => `
+                        <tr>
+                            <td>${index + 1}</td>
+                            ${viagem.map(bobinas => `<td>${bobinas}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td><strong>Total</strong></td>
+                        ${totalPerMachine.map(total => `<td><strong>${total}</strong></td>`).join('')}
+                    </tr>
+                </tfoot>
+            </table>
+        `;
     }
 </script>
-
-
-
 </body>
 </html>
