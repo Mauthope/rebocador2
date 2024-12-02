@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planejamento Logístico - Rebocador</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f4f4f9;
+            color: #333;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 300px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background: #4CAF50;
+            color: white;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .btn-group {
+            display: flex;
+            justify-content: space-around;
+        }
+        .active {
+            background-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Planejamento Logístico do Rebocador</h1>
+    <div class="container">
+        <!-- Entrada de Dados -->
+        <div class="section" id="setores-container">
+            <h2>Configuração dos Setores</h2>
+            <button onclick="addMachine()">Adicionar Máquina</button>
+            <div id="setores">
+                <!-- Setores serão adicionados aqui -->
+            </div>
+            <br>
+            <h3>Rebocador</h3>
+            <label for="cycle-time">Tempo de ciclo (min):</label>
+            <input type="number" id="cycle-time" value="15"><br><br>
+            <label for="rebocador-capacity">Capacidade (bobinas):</label>
+            <input type="number" id="rebocador-capacity" value="6"><br><br>
+
+            <button onclick="simulate()">Simular</button>
+        </div>
+
+        <!-- Resultado -->
+        <div class="section">
+            <h2>Resultados</h2>
+            <div id="results">
+                <p>Preencha os campos e clique em "Simular".</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let machineCounter = 0; // Contador para máquinas
+    let machineNames = []; // Array para armazenar os nomes das máquinas
+    let activeCronometer = null;
+    let cronometroInterval = null;
+    let cronometroStartTime = null;
+    let viagemTimes = [];
+
+    // Função para adicionar nova máquina
+    function addMachine() {
+        // Solicita o nome da máquina
+        const machineName = prompt("Digite o nome da nova máquina:");
+
+        if (machineName) {
+            machineCounter++;
+            machineNames.push(machineName);  // Armazena o nome da máquina
+            const setorContainer = document.createElement('div');
+            setorContainer.id = `setor-${machineCounter}`;
+            setorContainer.innerHTML = `
+                <h3>${machineName}</h3>  <!-- Exibe o nome da máquina -->
+                <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
+                <input type="number" id="length-${machineCounter}" value="3000"><br><br>
+                <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
+                <input type="number" id="speed-${machineCounter}" value="212"><br><br>
+            `;
+            document.getElementById('setores').appendChild(setorContainer);
+        } else {
+            alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
+        }
+    }
+
+    // Função para simular o planejamento
+function simulate() {
+    const rebocadorCapacity = parseFloat(document.getElementById('rebocador-capacity').value);
+    const cycleTime = parseFloat(document.getElementById('cycle-time').value);
+
+    let setorConsumptions = [];
+
+    // Loop para calcular o consumo de cada máquina
+    for (let i = 1; i <= machineCounter; i++) {
+        const length = parseFloat(document.getElementById(`length-${i}`).value);
+        const speed = parseFloat(document.getElementById(`speed-${i}`).value);
+        const consumption = 1 / (length / speed);
+        setorConsumptions.push(consumption);
+    }
+
+    // Planejamento inicial das viagens
+    let viagens = [];
+    let estoque = Array(machineCounter).fill(1); // Começa com 1 bobina de estoque por máquina
+
+    for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
+        let viagem = Array(machineCounter).fill(0); // Viagem para cada máquina
+        let remainingCapacity = rebocadorCapacity;
+
+        for (let i = 0; i < machineCounter; i++) {
+            const consumoSetor = setorConsumptions[i] * cycleTime;
+            estoque[i] -= consumoSetor;
+
+            if (estoque[i] < 1 && remainingCapacity > 0) {
+                viagem[i] = 1; // Envia uma bobina
+                estoque[i] += 1;
+                remainingCapacity -= 1;
+            }
+        }
+
+        viagens.push(viagem);
+    }
+
+    // Renderização dos resultados
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = `
+        <p><strong>O rebocador atende à demanda com 1 bobina de estoque por máquina.</strong></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    ${machineNames.map(name => `<th>${name}</th>`).join('')} <!-- Nomes das máquinas nas colunas -->
+                </tr>
+            </thead>
+            <tbody>
+                ${viagens.map((viagem, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        ${viagem.map(bobinas => `<td>${bobinas}</td>`).join('')}
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+
+    // Aplicar a coloração azul para células com valores diferentes de 0
+    const rows = document.querySelectorAll('table tbody tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        for (let i = 1; i < cells.length - 1; i++) {  // Ignora a primeira (número) e a última (botão)
+            const value = parseFloat(cells[i].textContent);
+            if (value !== 0) {
+                cells[i].style.backgroundColor = 'blue'; // Aplica o fundo azul
+            }
+        }
+    });
+}
+
+    // Função para alternar o cronômetro de atendimento
+    function toggleCronometro(index) {
+        const viagem = document.querySelectorAll('table tr')[index + 1];
+        const atendimentoBtn = viagem.querySelector('button');
+        const atendimentoCell = viagem.querySelector('td:last-child');
+
+        if (atendimentoBtn.textContent === "Atender") {
+            // Iniciar cronômetro
+            atendimentoBtn.textContent = "Finalizar";
+            cronometroStartTime = Date.now();
+            cronometroInterval = setInterval(() => updateCronometro(atendimentoBtn), 1000);
+        } else {
+            // Finalizar cronômetro
+            const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
+            clearInterval(cronometroInterval);
+            cronometroInterval = null;
+            atendimentoBtn.textContent = `Finalizado: ${timeSpent.toFixed(2)} min`;
+            atendimentoCell.style.backgroundColor = timeSpent > parseFloat(document.getElementById('cycle-time').value) ? 'red' : 'green';
+        }
+    }
+
+    // Função para atualizar o cronômetro
+    function updateCronometro(button) {
+        const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
+        button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
+    }
+</script>
+
+
+
+</body>
+</html>
