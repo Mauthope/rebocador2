@@ -93,28 +93,42 @@
 
 <script>
     let machineCounter = 0; // Contador para máquinas
-    let machineNames = ["F1"]; // Inclui a máquina prioritária F1
-    let setorConsumptions = [10 / 60]; // Consumo fixo de 10 bobinas por hora (bobinas/min)
+    let machineNames = []; // Array para armazenar os nomes das máquinas
+    let setorConsumptions = []; // Consumo de cada setor
+    const F1Consumption = 10; // Consumo fixo da máquina F1 (10 bobinas por hora)
+    const cycleTime = 15; // Tempo de ciclo padrão em minutos
+
+    // Adiciona máquina fixa F1 automaticamente
+    document.addEventListener("DOMContentLoaded", () => {
+        addMachine("F1", true);
+    });
 
     // Função para adicionar nova máquina
-    function addMachine() {
-        const machineName = prompt("Digite o nome da nova máquina:");
+    function addMachine(machineName, isFixed = false) {
+        if (!isFixed) {
+            machineName = machineName || prompt("Digite o nome da nova máquina:");
+        }
 
         if (machineName) {
             machineCounter++;
-            machineNames.push(machineName);  // Armazena o nome da máquina
-            setorConsumptions.push(0); // Inicializa consumo com 0
+            machineNames.push(machineName);
             const setorContainer = document.createElement('div');
             setorContainer.id = `setor-${machineCounter}`;
             setorContainer.innerHTML = `
-                <h3>${machineName}</h3>
-                <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
-                <input type="number" id="length-${machineCounter}" value="3000"><br><br>
-                <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
-                <input type="number" id="speed-${machineCounter}" value="212"><br><br>
+                <h3>${machineName} ${isFixed ? "(Fixa)" : ""}</h3>
+                ${!isFixed ? `
+                    <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
+                    <input type="number" id="length-${machineCounter}" value="3000"><br><br>
+                    <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
+                    <input type="number" id="speed-${machineCounter}" value="212"><br><br>
+                ` : ""}
             `;
             document.getElementById('setores').appendChild(setorContainer);
-        } else {
+
+            if (isFixed) {
+                setorConsumptions.push(F1Consumption / 60); // Consumo por minuto
+            }
+        } else if (!isFixed) {
             alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
         }
     }
@@ -122,20 +136,11 @@
     // Função para simular o planejamento
     function simulate() {
         const rebocadorCapacity = parseFloat(document.getElementById('rebocador-capacity').value);
-        const cycleTime = parseFloat(document.getElementById('cycle-time').value);
-
-        let totalDemand = setorConsumptions[0]; // Começa com a demanda fixa da F1
-        for (let i = 1; i <= machineCounter; i++) {
-            const length = parseFloat(document.getElementById(`length-${i}`).value);
-            const speed = parseFloat(document.getElementById(`speed-${i}`).value);
-            const consumption = 1 / (length / speed);
-            setorConsumptions[i] = consumption;
-            totalDemand += consumption;
-        }
-
-        const rebocadorCapacityPerMinute = rebocadorCapacity / cycleTime;
         const resultsDiv = document.getElementById('results');
+        let totalDemand = setorConsumptions.reduce((acc, curr) => acc + curr, 0);
+        let rebocadorCapacityPerMinute = rebocadorCapacity / cycleTime;
 
+        // Verifica se a demanda total excede a capacidade
         if (totalDemand > rebocadorCapacityPerMinute) {
             resultsDiv.innerHTML = `
                 <p><strong>O rebocador não consegue atender à demanda total.</strong></p>
@@ -145,36 +150,33 @@
             return;
         }
 
+        // Planejamento inicial das viagens
         let viagens = [];
-        let reservas = Array(machineCounter + 1).fill(0); // Inclui reserva para F1
-        let totalPerMachine = Array(machineCounter + 1).fill(0);
+        let totalPerMachine = Array(machineCounter).fill(0);
 
-        for (let t = 0; t < 18 * 60; t += cycleTime) {
-            let viagem = Array(machineCounter + 1).fill(0);
+        for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
+            let viagem = Array(machineCounter).fill(0);
             let remainingCapacity = rebocadorCapacity;
 
-            if (remainingCapacity >= 10) {
-                viagem[0] = 10; // Sempre atende F1 primeiro
-                remainingCapacity -= 10;
-                totalPerMachine[0] += 10;
-            }
+            // Prioriza F1 (primeira máquina no array)
+            viagem[0] = Math.min(remainingCapacity, Math.ceil(F1Consumption * cycleTime / 60));
+            totalPerMachine[0] += viagem[0];
+            remainingCapacity -= viagem[0];
 
-            for (let i = 1; i <= machineCounter; i++) {
-                const needed = Math.max(0, setorConsumptions[i] * cycleTime - reservas[i]);
-                const bobinas = Math.min(remainingCapacity, Math.ceil(needed));
-                viagem[i] = bobinas;
-                reservas[i] += bobinas - setorConsumptions[i] * cycleTime;
-                remainingCapacity -= bobinas;
-                totalPerMachine[i] += bobinas;
+            // Distribui o restante para outras máquinas
+            for (let i = 1; i < machineCounter && remainingCapacity > 0; i++) {
+                const needed = setorConsumptions[i] * cycleTime;
+                viagem[i] = Math.min(remainingCapacity, Math.ceil(needed));
+                totalPerMachine[i] += viagem[i];
+                remainingCapacity -= viagem[i];
             }
 
             viagens.push(viagem);
         }
 
+        // Renderiza resultados
         resultsDiv.innerHTML = `
             <p><strong>O rebocador atende à demanda.</strong></p>
-            <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
-            <p>Capacidade do rebocador: ${rebocadorCapacityPerMinute.toFixed(2)} bobinas/min</p>
             <table>
                 <thead>
                     <tr>
@@ -200,5 +202,6 @@
         `;
     }
 </script>
+
 </body>
 </html>
