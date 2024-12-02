@@ -6,71 +6,71 @@
     <title>Planejamento Logístico - Rebocador</title>
     <style>
         body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f4f4f9;
-    color: #333;
-}
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f4f4f9;
+            color: #333;
+        }
 
-h1, h2 {
-    text-align: center;
-    color: #4CAF50;
-}
+        h1, h2 {
+            text-align: center;
+            color: #4CAF50;
+        }
 
-.container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    align-items: flex-start; /* Alinhamento pelo topo */
-}
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-start;
+        }
 
-.section {
-    background: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    min-width: 300px;
-    width: fit-content; /* Ajusta ao conteúdo */
-}
+        .section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            min-width: 300px;
+            width: fit-content;
+        }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
 
-th, td {
-    text-align: center;
-    border: 1px solid #ddd;
-    padding: 8px;
-}
+        th, td {
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
 
-th {
-    background: #4CAF50;
-    color: white;
-}
+        th {
+            background: #4CAF50;
+            color: white;
+        }
 
-button {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-radius: 5px;
-}
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
 
-button:hover {
-    background: #45a049;
-}
+        button:hover {
+            background: #45a049;
+        }
 
-.btn-group {
-    display: flex;
-    justify-content: space-around;
-}
+        .btn-group {
+            display: flex;
+            justify-content: space-around;
+        }
 
-.active {
-    background-color: #2196F3;
-}
+        .active {
+            background-color: #2196F3;
+        }
     </style>
 </head>
 <body>
@@ -91,7 +91,7 @@ button:hover {
             <input type="number" id="rebocador-capacity" value="6"><br><br>
 
             <button onclick="simulate()">Simular</button>
-            <button onclick="clearLocalStorage()">Limpar Dados</button>
+            <button onclick="clearStorage()">Limpar Dados</button>
         </div>
 
         <!-- Resultado -->
@@ -104,37 +104,66 @@ button:hover {
     </div>
 
 <script>
-    let machineCounter = 0; // Contador para máquinas
-    let machineNames = []; // Array para armazenar os nomes das máquinas
+    let machineCounter = 0;
+    let machineNames = []; 
     let activeCronometer = null;
     let cronometroInterval = null;
     let cronometroStartTime = null;
     let viagemTimes = [];
-    let cycleCounter = 0;  // Contador de ciclos do rebocador
-    let cycleThreshold = 0; // Número de ciclos após o qual a linha será zerada
+    let cycleCounter = 0;  
+    let cycleThreshold = 0; 
+
+    // Carregar dados do localStorage
+    window.onload = function() {
+        const savedData = JSON.parse(localStorage.getItem('rebocadorData'));
+        if (savedData) {
+            machineCounter = savedData.machineCounter;
+            machineNames = savedData.machineNames;
+            cycleThreshold = savedData.cycleThreshold;
+
+            // Carregar as máquinas armazenadas
+            savedData.machineNames.forEach((machineName, index) => {
+                addMachineFromStorage(machineName, index + 1);
+            });
+        }
+    };
 
     // Função para adicionar nova máquina
-   function addMachine() {
-    const machineName = prompt("Digite o nome da nova máquina:");
+    function addMachine() {
+        const machineName = prompt("Digite o nome da nova máquina:");
 
-    if (machineName) {
-        machineCounter++;
-        machineNames.push(machineName);  // Armazena o nome da máquina
+        if (machineName) {
+            machineCounter++;
+            machineNames.push(machineName);
+            const setorContainer = document.createElement('div');
+            setorContainer.id = `setor-${machineCounter}`;
+            setorContainer.innerHTML = `
+                <h3>${machineName}</h3>  
+                <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
+                <input type="number" id="length-${machineCounter}" value="3000"><br><br>
+                <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
+                <input type="number" id="speed-${machineCounter}" value="212"><br><br>
+            `;
+            document.getElementById('setores').appendChild(setorContainer);
+            saveData(); // Salvar dados no localStorage
+        } else {
+            alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
+        }
+    }
+
+    // Função para adicionar máquina a partir do storage
+    function addMachineFromStorage(machineName, index) {
         const setorContainer = document.createElement('div');
-        setorContainer.id = `setor-${machineCounter}`;
+        setorContainer.id = `setor-${index}`;
         setorContainer.innerHTML = `
             <h3>${machineName}</h3>  
-            <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
-            <input type="number" id="length-${machineCounter}" value="3000"><br><br>
-            <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
-            <input type="number" id="speed-${machineCounter}" value="212"><br><br>
+            <label for="length-${index}">Comprimento de bobina (m):</label>
+            <input type="number" id="length-${index}" value="3000"><br><br>
+            <label for="speed-${index}">Velocidade de consumo (m/min):</label>
+            <input type="number" id="speed-${index}" value="212"><br><br>
         `;
         document.getElementById('setores').appendChild(setorContainer);
-        saveToLocalStorage(); // Salva as alterações no localStorage
-    } else {
-        alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
     }
-}
 
     // Função para simular o planejamento
     function simulate() {
@@ -144,10 +173,8 @@ button:hover {
         let totalDemand = 0;
         let setorConsumptions = [];
 
-        // Calcular o número de ciclos necessários para 20 minutos com base na fórmula aprimorada
-        cycleThreshold = Math.ceil((20 / cycleTime) + 1);  // Fórmula: 20 / ciclo + 1, arredondado para maior
+        cycleThreshold = Math.ceil((20 / cycleTime) + 1);
 
-        // Loop para calcular o consumo de cada máquina
         for (let i = 1; i <= machineCounter; i++) {
             const length = parseFloat(document.getElementById(`length-${i}`).value);
             const speed = parseFloat(document.getElementById(`speed-${i}`).value);
@@ -156,10 +183,8 @@ button:hover {
             totalDemand += consumption;
         }
 
-        // Capacidade do rebocador (bobinas/min)
         const rebocadorCapacityPerMinute = rebocadorCapacity / cycleTime;
 
-        // Verificação de capacidade
         const resultsDiv = document.getElementById('results');
         if (totalDemand > rebocadorCapacityPerMinute) {
             resultsDiv.innerHTML = `
@@ -170,16 +195,14 @@ button:hover {
             return;
         }
 
-        // Planejamento inicial das viagens
         let viagens = [];
-        let reservas = Array(machineCounter).fill(0); // Reserva para cada máquina
-        let totalPerMachine = Array(machineCounter).fill(0); // Total por máquina
+        let reservas = Array(machineCounter).fill(0);
+        let totalPerMachine = Array(machineCounter).fill(0);
 
-        for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
-            let viagem = Array(machineCounter).fill(0); // Viagem para cada máquina
+        for (let t = 0; t < 18 * 60; t += cycleTime) {
+            let viagem = Array(machineCounter).fill(0);
             let remainingCapacity = rebocadorCapacity;
 
-            // Lógica de distribuição com prioridades e reservas
             for (let i = 0; i < machineCounter; i++) {
                 const consumoSetor = setorConsumptions[i];
                 const needed = Math.max(0, consumoSetor * cycleTime - reservas[i]);
@@ -188,24 +211,19 @@ button:hover {
                 reservas[i] += bobinas - consumoSetor * cycleTime;
                 remainingCapacity -= bobinas;
 
-                // Acumula os totais
                 totalPerMachine[i] += bobinas;
             }
 
-            // Incrementa o contador de ciclos
             cycleCounter++;
 
-            // Se o número de ciclos atingir o cicloThreshold, zera a linha (substitui "0" por "F1")
             if (cycleCounter >= cycleThreshold) {
-                // Substitui o valor da viagem com "F1" nas linhas zeradas
-                viagem.fill("F1"); // Zera todos os valores da viagem com "F1"
-                cycleCounter = 0; // Reseta o contador de ciclos
+                viagem.fill("F1");
+                cycleCounter = 0;
             }
 
             viagens.push(viagem);
         }
 
-        // Renderização dos resultados
         resultsDiv.innerHTML = `
             <p><strong>O rebocador atende à demanda.</strong></p>
             <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
@@ -227,119 +245,25 @@ button:hover {
                         </tr>
                     `).join('')}
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td><strong>Total</strong></td>
-                        ${totalPerMachine.map(total => `<td><strong>${total}</strong></td>`).join('')}
-                        <td></td>
-                    </tr>
-                </tfoot>
             </table>
         `;
-
-        // Aplicar a coloração azul para células com valores diferentes de "F1"
-        const rows = document.querySelectorAll('table tbody tr');
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            for (let i = 1; i < cells.length - 1; i++) {  
-                const value = cells[i].textContent.trim();  // Usando trim() para evitar espaços extras
-                if (value === "F1") {
-                    cells[i].style.backgroundColor = 'yellow';  // Cor amarela se for "F1"
-                } else if (value !== "0") {
-                    cells[i].style.backgroundColor = 'blue';  // Cor azul se não for "0"
-                }
-            }
-        });
-
-        saveToLocalStorage(); // Salva as alterações no localStorage
     }
 
-    // Função para alternar o cronômetro de atendimento
-    function toggleCronometro(index) {
-        const viagem = document.querySelectorAll('table tr')[index + 1];
-        const atendimentoBtn = viagem.querySelector('button');
-        const atendimentoCell = viagem.querySelector('td:last-child');
-
-        if (atendimentoBtn.textContent === "Atender") {
-            atendimentoBtn.textContent = "Finalizar";
-            cronometroStartTime = Date.now();
-            cronometroInterval = setInterval(() => updateCronometro(atendimentoBtn), 1000);
-        } else {
-            const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-            clearInterval(cronometroInterval);
-            cronometroInterval = null;
-            atendimentoBtn.textContent = `Finalizado: ${timeSpent.toFixed(2)} min`;
-            atendimentoCell.style.backgroundColor = timeSpent > parseFloat(document.getElementById('cycle-time').value) ? 'red' : 'green';
-        }
+    // Salvar dados no localStorage
+    function saveData() {
+        const data = {
+            machineCounter: machineCounter,
+            machineNames: machineNames,
+            cycleThreshold: cycleThreshold
+        };
+        localStorage.setItem('rebocadorData', JSON.stringify(data));
     }
 
-    // Função para atualizar o cronômetro
-    function updateCronometro(button) {
-        const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-        button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
+    // Limpar o localStorage
+    function clearStorage() {
+        localStorage.removeItem('rebocadorData');
+        window.location.reload();
     }
-
-    // Função para salvar os dados no localStorage
-   function saveToLocalStorage() {
-    const data = {
-        machineNames: machineNames,
-        machineCounter: machineCounter,
-        cycleTime: parseFloat(document.getElementById('cycle-time').value),
-        rebocadorCapacity: parseFloat(document.getElementById('rebocador-capacity').value),
-        machines: []  // Adicionando informações das máquinas
-    };
-
-    // Para cada máquina, adicionar seus dados (nome, comprimento e velocidade) no objeto
-    for (let i = 1; i <= machineCounter; i++) {
-        const length = parseFloat(document.getElementById(`length-${i}`).value);
-        const speed = parseFloat(document.getElementById(`speed-${i}`).value);
-        data.machines.push({
-            name: machineNames[i - 1],
-            length: length,
-            speed: speed
-        });
-    }
-
-    localStorage.setItem('logisticsData', JSON.stringify(data));
-}
-
-    // Função para carregar os dados do localStorage
-    function loadFromLocalStorage() {
-    const savedData = localStorage.getItem('logisticsData');
-    if (savedData) {
-        const data = JSON.parse(savedData);
-        machineNames = data.machineNames || [];
-        machineCounter = data.machineCounter || 0;
-        document.getElementById('cycle-time').value = data.cycleTime || 0;
-        document.getElementById('rebocador-capacity').value = data.rebocadorCapacity || 0;
-
-        // Carregar as máquinas armazenadas
-        data.machines.forEach((machine, index) => {
-            if (index < machineCounter) {
-                // Preencher os campos com os dados das máquinas
-                const setorContainer = document.getElementById(`setor-${index + 1}`);
-                if (setorContainer) {
-                    document.getElementById(`length-${index + 1}`).value = machine.length;
-                    document.getElementById(`speed-${index + 1}`).value = machine.speed;
-                }
-            }
-        });
-    }
-}
-
-    // Função para limpar o localStorage
-    function clearLocalStorage() {
-        localStorage.removeItem('logisticsData');
-        alert('Dados limpos do localStorage');
-        window.location.reload();  // Recarrega a página
-    }
-
-    // Carregar os dados do localStorage ao carregar a página
-    window.onload = loadFromLocalStorage;
 </script>
-
-
-
-
 </body>
 </html>
