@@ -182,10 +182,10 @@
             // Incrementa o contador de ciclos
             cycleCounter++;
 
-            // Se o número de ciclos atingir o cicloThreshold, zera a linha
+            // Se o número de ciclos atingir o cicloThreshold, zera a linha (substitui "0" por "F1")
             if (cycleCounter >= cycleThreshold) {
-                // Substitui o valor 0 por "F1"
-                viagem = viagem.map(bobinas => bobinas === 0 ? "F1" : bobinas);
+                // Substitui o valor da viagem com "F1" nas linhas zeradas
+                viagem.fill("F1"); // Zera todos os valores da viagem com "F1"
                 cycleCounter = 0; // Reseta o contador de ciclos
             }
 
@@ -262,6 +262,7 @@
         button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
     }
 </script>
+
 
 </body>
 </html>
