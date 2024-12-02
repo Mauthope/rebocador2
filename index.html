@@ -281,14 +281,15 @@ button:hover {
 
     // Função para salvar os dados no localStorage
     function saveToLocalStorage() {
-        const data = {
-            machineNames: machineNames,
-            machineCounter: machineCounter,
-            cycleTime: parseFloat(document.getElementById('cycle-time').value),
-            rebocadorCapacity: parseFloat(document.getElementById('rebocador-capacity').value),
-        };
-        localStorage.setItem('logisticsData', JSON.stringify(data));
-    }
+    const data = {
+        machineNames: machineNames,
+        machineCounter: machineCounter,
+        cycleTime: parseFloat(document.getElementById('cycle-time').value),
+        rebocadorCapacity: parseFloat(document.getElementById('rebocador-capacity').value),
+    };
+    console.log("Salvando dados no localStorage:", data); // Verificação
+    localStorage.setItem('logisticsData', JSON.stringify(data));
+}
 
     // Função para carregar os dados do localStorage
     function loadFromLocalStorage() {
