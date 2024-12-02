@@ -184,8 +184,8 @@
 
             // Se o número de ciclos atingir o cicloThreshold, zera a linha
             if (cycleCounter >= cycleThreshold) {
-                // Zera todos os valores da viagem
-                viagem.fill(0); // Zera todos os valores da viagem
+                // Substitui o valor 0 por "F1"
+                viagem = viagem.map(bobinas => bobinas === 0 ? "F1" : bobinas);
                 cycleCounter = 0; // Reseta o contador de ciclos
             }
 
@@ -224,13 +224,13 @@
             </table>
         `;
 
-        // Aplicar a coloração azul para células com valores diferentes de 0
+        // Aplicar a coloração azul para células com valores diferentes de "F1"
         const rows = document.querySelectorAll('table tbody tr');
         rows.forEach(row => {
             const cells = row.querySelectorAll('td');
             for (let i = 1; i < cells.length - 1; i++) {  
-                const value = parseFloat(cells[i].textContent);
-                if (value !== 0) {
+                const value = cells[i].textContent;
+                if (value !== "F1") {
                     cells[i].style.backgroundColor = 'blue'; 
                 }
             }
@@ -262,7 +262,6 @@
         button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
     }
 </script>
-
 
 </body>
 </html>
