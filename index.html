@@ -114,27 +114,27 @@ button:hover {
     let cycleThreshold = 0; // Número de ciclos após o qual a linha será zerada
 
     // Função para adicionar nova máquina
-    function addMachine() {
-        const machineName = prompt("Digite o nome da nova máquina:");
+   function addMachine() {
+    const machineName = prompt("Digite o nome da nova máquina:");
 
-        if (machineName) {
-            machineCounter++;
-            machineNames.push(machineName);  // Armazena o nome da máquina
-            const setorContainer = document.createElement('div');
-            setorContainer.id = `setor-${machineCounter}`;
-            setorContainer.innerHTML = `
-                <h3>${machineName}</h3>  
-                <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
-                <input type="number" id="length-${machineCounter}" value="3000"><br><br>
-                <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
-                <input type="number" id="speed-${machineCounter}" value="212"><br><br>
-            `;
-            document.getElementById('setores').appendChild(setorContainer);
-            saveToLocalStorage(); // Salva as alterações no localStorage
-        } else {
-            alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
-        }
+    if (machineName) {
+        machineCounter++;
+        machineNames.push(machineName);  // Armazena o nome da máquina
+        const setorContainer = document.createElement('div');
+        setorContainer.id = `setor-${machineCounter}`;
+        setorContainer.innerHTML = `
+            <h3>${machineName}</h3>  
+            <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
+            <input type="number" id="length-${machineCounter}" value="3000"><br><br>
+            <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
+            <input type="number" id="speed-${machineCounter}" value="212"><br><br>
+        `;
+        document.getElementById('setores').appendChild(setorContainer);
+        saveToLocalStorage(); // Salva as alterações no localStorage
+    } else {
+        alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
     }
+}
 
     // Função para simular o planejamento
     function simulate() {
@@ -280,28 +280,52 @@ button:hover {
     }
 
     // Função para salvar os dados no localStorage
-    function saveToLocalStorage() {
+   function saveToLocalStorage() {
     const data = {
         machineNames: machineNames,
         machineCounter: machineCounter,
         cycleTime: parseFloat(document.getElementById('cycle-time').value),
         rebocadorCapacity: parseFloat(document.getElementById('rebocador-capacity').value),
+        machines: []  // Adicionando informações das máquinas
     };
-    console.log("Salvando dados no localStorage:", data); // Verificação
+
+    // Para cada máquina, adicionar seus dados (nome, comprimento e velocidade) no objeto
+    for (let i = 1; i <= machineCounter; i++) {
+        const length = parseFloat(document.getElementById(`length-${i}`).value);
+        const speed = parseFloat(document.getElementById(`speed-${i}`).value);
+        data.machines.push({
+            name: machineNames[i - 1],
+            length: length,
+            speed: speed
+        });
+    }
+
     localStorage.setItem('logisticsData', JSON.stringify(data));
 }
 
     // Função para carregar os dados do localStorage
     function loadFromLocalStorage() {
-        const savedData = localStorage.getItem('logisticsData');
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            machineNames = data.machineNames || [];
-            machineCounter = data.machineCounter || 0;
-            document.getElementById('cycle-time').value = data.cycleTime || 0;
-            document.getElementById('rebocador-capacity').value = data.rebocadorCapacity || 0;
-        }
+    const savedData = localStorage.getItem('logisticsData');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        machineNames = data.machineNames || [];
+        machineCounter = data.machineCounter || 0;
+        document.getElementById('cycle-time').value = data.cycleTime || 0;
+        document.getElementById('rebocador-capacity').value = data.rebocadorCapacity || 0;
+
+        // Carregar as máquinas armazenadas
+        data.machines.forEach((machine, index) => {
+            if (index < machineCounter) {
+                // Preencher os campos com os dados das máquinas
+                const setorContainer = document.getElementById(`setor-${index + 1}`);
+                if (setorContainer) {
+                    document.getElementById(`length-${index + 1}`).value = machine.length;
+                    document.getElementById(`speed-${index + 1}`).value = machine.speed;
+                }
+            }
+        });
     }
+}
 
     // Função para limpar o localStorage
     function clearLocalStorage() {
