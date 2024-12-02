@@ -98,10 +98,10 @@
     let cronometroInterval = null;
     let cronometroStartTime = null;
     let viagemTimes = [];
+    let cycleCounter = 0;  // Contador de ciclos do rebocador
 
     // Função para adicionar nova máquina
     function addMachine() {
-        // Solicita o nome da máquina
         const machineName = prompt("Digite o nome da nova máquina:");
 
         if (machineName) {
@@ -110,7 +110,7 @@
             const setorContainer = document.createElement('div');
             setorContainer.id = `setor-${machineCounter}`;
             setorContainer.innerHTML = `
-                <h3>${machineName}</h3>  <!-- Exibe o nome da máquina -->
+                <h3>${machineName}</h3>  
                 <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
                 <input type="number" id="length-${machineCounter}" value="3000"><br><br>
                 <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
@@ -159,12 +159,6 @@
         let totalPerMachine = Array(machineCounter).fill(0); // Total por máquina
 
         for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
-            if (t % (20 * 60) === 0) { // A cada 20 minutos (em segundos), o rebocador pausa
-                // Zera a linha de atendimento
-                viagens.push(Array(machineCounter).fill(0)); 
-                continue; // Pula para o próximo ciclo de 20 minutos
-            }
-
             let viagem = Array(machineCounter).fill(0); // Viagem para cada máquina
             let remainingCapacity = rebocadorCapacity;
 
@@ -181,6 +175,14 @@
                 totalPerMachine[i] += bobinas;
             }
 
+            // Incrementa o contador de ciclos e zera a linha a cada 20 minutos
+            cycleCounter++;
+            if (cycleCounter * cycleTime >= 20) {
+                // Zera a linha a cada múltiplo de 20 minutos
+                viagem.fill(0); // Zera todos os valores da viagem
+                cycleCounter = 0; // Reseta o contador de ciclos
+            }
+
             viagens.push(viagem);
         }
 
@@ -193,7 +195,7 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        ${machineNames.map(name => `<th>${name}</th>`).join('')} <!-- Nomes das máquinas nas colunas -->
+                        ${machineNames.map(name => `<th>${name}</th>`).join('')} 
                         <th>Atendimento</th>
                     </tr>
                 </thead>
@@ -215,18 +217,19 @@
                 </tfoot>
             </table>
         `;
-    // Aplicar a coloração azul para células com valores diferentes de 0
-    const rows = document.querySelectorAll('table tbody tr');
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        for (let i = 1; i < cells.length - 1; i++) {  // Ignora a primeira (número) e a última (botão)
-            const value = parseFloat(cells[i].textContent);
-            if (value !== 0) {
-                cells[i].style.backgroundColor = 'blue'; // Aplica o fundo azul
+
+        // Aplicar a coloração azul para células com valores diferentes de 0
+        const rows = document.querySelectorAll('table tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            for (let i = 1; i < cells.length - 1; i++) {  
+                const value = parseFloat(cells[i].textContent);
+                if (value !== 0) {
+                    cells[i].style.backgroundColor = 'blue'; 
+                }
             }
-        }
-    });
-}
+        });
+    }
 
     // Função para alternar o cronômetro de atendimento
     function toggleCronometro(index) {
@@ -235,12 +238,10 @@
         const atendimentoCell = viagem.querySelector('td:last-child');
 
         if (atendimentoBtn.textContent === "Atender") {
-            // Iniciar cronômetro
             atendimentoBtn.textContent = "Finalizar";
             cronometroStartTime = Date.now();
             cronometroInterval = setInterval(() => updateCronometro(atendimentoBtn), 1000);
         } else {
-            // Finalizar cronômetro
             const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
             clearInterval(cronometroInterval);
             cronometroInterval = null;
@@ -255,7 +256,6 @@
         button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
     }
 </script>
-
 
 
 </body>
