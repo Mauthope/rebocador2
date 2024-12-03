@@ -312,25 +312,31 @@
         }
     }
 
-    // Função de início do cronômetro
-    function startCronometro() {
-        cronometroStartTime = Date.now();
-        cronometroInterval = setInterval(updateCronometro, 1000);
+     // Função para alternar o cronômetro de atendimento
+    function toggleCronometro(index) {
+        const viagem = document.querySelectorAll('table tr')[index + 1];
+        const atendimentoBtn = viagem.querySelector('button');
+        const atendimentoCell = viagem.querySelector('td:last-child');
+
+        if (atendimentoBtn.textContent === "Atender") {
+            atendimentoBtn.textContent = "Finalizar";
+            cronometroStartTime = Date.now();
+            cronometroInterval = setInterval(() => updateCronometro(atendimentoBtn), 1000);
+        } else {
+            const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
+            clearInterval(cronometroInterval);
+            cronometroInterval = null;
+            atendimentoBtn.textContent = `Finalizado: ${timeSpent.toFixed(2)} min`;
+            atendimentoCell.style.backgroundColor = timeSpent > parseFloat(document.getElementById('cycle-time').value) ? 'red' : 'green';
+        }
     }
 
     // Função para atualizar o cronômetro
-    function updateCronometro() {
-        const elapsedTime = Date.now() - cronometroStartTime;
-        const minutes = Math.floor(elapsedTime / 60000);
-        const seconds = Math.floor((elapsedTime % 60000) / 1000);
-        document.getElementById('cronometro').textContent = `${minutes}:${seconds}`;
+    function updateCronometro(button) {
+        const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
+        button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
     }
 
-    // Função de parada do cronômetro
-    function stopCronometro() {
-        clearInterval(cronometroInterval);
-        document.getElementById('cronometro').textContent = "0:00";
-    }
 
     // Carregar dados ao carregar a página
     window.onload = loadMachineData;
