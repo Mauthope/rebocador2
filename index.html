@@ -5,72 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planejamento Logístico - Rebocador</title>
     <style>
-        body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f4f4f9;
-    color: #333;
-}
+ body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f4f4f9;
+            color: #333;
+        }
 
-h1, h2 {
-    text-align: center;
-    color: #4CAF50;
-}
+        h1, h2 {
+            text-align: center;
+            color: #4CAF50;
+        }
 
-.container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    align-items: flex-start; /* Alinhamento pelo topo */
-}
+        .container {
+            display: flex;
+            flex-wrap: nowrap; /* Impede a quebra para a próxima linha */
+            gap: 20px;
+            align-items: flex-start; /* Alinha pelo topo */
+            overflow-x: auto; /* Adiciona rolagem horizontal caso os itens excedam a largura da tela */
+        }
 
-.section {
-    background: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    min-width: 300px;
-    width: fit-content; /* Ajusta ao conteúdo */
-}
+        .section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            min-width: 300px;
+            width: fit-content; /* Ajusta ao conteúdo */
+        }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
 
-th, td {
-    text-align: center;
-    border: 1px solid #ddd;
-    padding: 8px;
-}
+        th, td {
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
 
-th {
-    background: #4CAF50;
-    color: white;
-}
+        th {
+            background: #4CAF50;
+            color: white;
+        }
 
-button {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-radius: 5px;
-}
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
 
-button:hover {
-    background: #45a049;
-}
+        button:hover {
+            background: #45a049;
+        }
 
-.btn-group {
-    display: flex;
-    justify-content: space-around;
-}
+        .btn-group {
+            display: flex;
+            justify-content: space-around;
+        }
 
-.active {
-    background-color: #2196F3;
-}
+        .active {
+            background-color: #2196F3;
+        }
     </style>
 </head>
 <body>
