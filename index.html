@@ -19,10 +19,10 @@
 
         .container {
             display: flex;
-            flex-wrap: nowrap;
+            flex-wrap: nowrap; /* Impede a quebra para a próxima linha */
             gap: 20px;
-            align-items: flex-start;
-            overflow-x: auto;
+            align-items: flex-start; /* Alinha pelo topo */
+            overflow-x: auto; /* Adiciona rolagem horizontal caso os itens excedam a largura da tela */
         }
 
         .section {
@@ -31,7 +31,7 @@
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             min-width: 300px;
-            width: fit-content;
+            width: fit-content; /* Ajusta ao conteúdo */
         }
 
         table {
@@ -81,6 +81,7 @@
         <div class="section" id="setores-container">
             <h2>Configuração dos Setores</h2>
             <button onclick="addMachine()">Adicionar Máquina</button>
+            <button onclick="clearLocalStorage()">Limpar Configurações</button>
             <div id="setores">
                 <!-- Setores serão adicionados aqui -->
             </div>
@@ -92,7 +93,6 @@
             <input type="number" id="rebocador-capacity" value="6"><br><br>
 
             <button onclick="simulate()">Simular</button>
-            <button onclick="clearLocalStorage()">Limpar Configuração</button>
         </div>
 
         <!-- Resultado -->
@@ -105,14 +105,35 @@
     </div>
 
 <script>
-    let machineCounter = 0;
-    let machineNames = []; 
+    let machineCounter = 0; // Contador para máquinas
+    let machineNames = []; // Array para armazenar os nomes das máquinas
     let activeCronometer = null;
     let cronometroInterval = null;
     let cronometroStartTime = null;
     let viagemTimes = [];
-    let cycleCounter = 0;
-    let cycleThreshold = 0;
+    let cycleCounter = 0;  // Contador de ciclos do rebocador
+    let cycleThreshold = 0; // Número de ciclos após o qual a linha será zerada
+
+    // Carregar dados do localStorage se disponíveis
+    function loadMachineData() {
+        const savedMachines = JSON.parse(localStorage.getItem('machines'));
+        if (savedMachines) {
+            savedMachines.forEach(machine => {
+                machineCounter++;
+                machineNames.push(machine.name);
+                const setorContainer = document.createElement('div');
+                setorContainer.id = `setor-${machineCounter}`;
+                setorContainer.innerHTML = `
+                    <h3>${machine.name}</h3>  
+                    <label for="length-${machineCounter}">Comprimento de bobina (m):</label>
+                    <input type="number" id="length-${machineCounter}" value="${machine.length}"><br><br>
+                    <label for="speed-${machineCounter}">Velocidade de consumo (m/min):</label>
+                    <input type="number" id="speed-${machineCounter}" value="${machine.speed}"><br><br>
+                `;
+                document.getElementById('setores').appendChild(setorContainer);
+            });
+        }
+    }
 
     // Função para adicionar nova máquina
     function addMachine() {
@@ -120,7 +141,7 @@
 
         if (machineName) {
             machineCounter++;
-            machineNames.push(machineName);
+            machineNames.push(machineName);  // Armazena o nome da máquina
             const setorContainer = document.createElement('div');
             setorContainer.id = `setor-${machineCounter}`;
             setorContainer.innerHTML = `
@@ -131,10 +152,30 @@
                 <input type="number" id="speed-${machineCounter}" value="212"><br><br>
             `;
             document.getElementById('setores').appendChild(setorContainer);
-            saveMachinesToLocalStorage();  // Salva as máquinas no localStorage
+
+            // Salvar dados no localStorage
+            saveMachineData();
         } else {
             alert("Nome da máquina não fornecido. Máquina não foi adicionada.");
         }
+    }
+
+    // Função para salvar dados das máquinas no localStorage
+    function saveMachineData() {
+        const machines = [];
+        for (let i = 1; i <= machineCounter; i++) {
+            const name = machineNames[i - 1];
+            const length = parseFloat(document.getElementById(`length-${i}`).value);
+            const speed = parseFloat(document.getElementById(`speed-${i}`).value);
+            machines.push({ name, length, speed });
+        }
+        localStorage.setItem('machines', JSON.stringify(machines));
+    }
+
+    // Função para limpar o localStorage
+    function clearLocalStorage() {
+        localStorage.removeItem('machines');
+        location.reload(); // Recarrega a página para limpar a interface
     }
 
     // Função para simular o planejamento
@@ -145,8 +186,10 @@
         let totalDemand = 0;
         let setorConsumptions = [];
 
-        cycleThreshold = Math.ceil((20 / cycleTime) + 1);
+        // Calcular o número de ciclos necessários para 20 minutos com base na fórmula aprimorada
+        cycleThreshold = Math.ceil((20 / cycleTime) + 1);  // Fórmula: 20 / ciclo + 1, arredondado para maior
 
+        // Loop para calcular o consumo de cada máquina
         for (let i = 1; i <= machineCounter; i++) {
             const length = parseFloat(document.getElementById(`length-${i}`).value);
             const speed = parseFloat(document.getElementById(`speed-${i}`).value);
@@ -155,8 +198,10 @@
             totalDemand += consumption;
         }
 
+        // Capacidade do rebocador (bobinas/min)
         const rebocadorCapacityPerMinute = rebocadorCapacity / cycleTime;
 
+        // Verificação de capacidade
         const resultsDiv = document.getElementById('results');
         if (totalDemand > rebocadorCapacityPerMinute) {
             resultsDiv.innerHTML = `
@@ -167,12 +212,13 @@
             return;
         }
 
+        // Planejamento inicial das viagens
         let viagens = [];
-        let reservas = Array(machineCounter).fill(0);
-        let totalPerMachine = Array(machineCounter).fill(0);
+        let reservas = Array(machineCounter).fill(0); // Reserva para cada máquina
+        let totalPerMachine = Array(machineCounter).fill(0); // Total por máquina
 
-        for (let t = 0; t < 18 * 60; t += cycleTime) {
-            let viagem = Array(machineCounter).fill(0);
+        for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
+            let viagem = Array(machineCounter).fill(0); // Viagem para cada máquina
             let remainingCapacity = rebocadorCapacity;
 
             for (let i = 0; i < machineCounter; i++) {
