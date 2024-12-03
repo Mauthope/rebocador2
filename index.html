@@ -312,30 +312,38 @@
         }
     }
 
-     // Função para alternar o cronômetro de atendimento
-    function toggleCronometro(index) {
-        const viagem = document.querySelectorAll('table tr')[index + 1];
-        const atendimentoBtn = viagem.querySelector('button');
-        const atendimentoCell = viagem.querySelector('td:last-child');
+   // Função para alternar o cronômetro de atendimento
+function toggleCronometro(index) {
+    const viagem = document.querySelectorAll('table tr')[index + 1];
+    const atendimentoBtn = viagem.querySelector('button');
+    const atendimentoCell = viagem.querySelector('td:last-child');
 
-        if (atendimentoBtn.textContent === "Atender") {
-            atendimentoBtn.textContent = "Finalizar";
-            cronometroStartTime = Date.now();
-            cronometroInterval = setInterval(() => updateCronometro(atendimentoBtn), 1000);
+    if (atendimentoBtn.textContent === "Atender") {
+        atendimentoBtn.textContent = "Finalizar";
+        cronometroStartTime = Date.now();
+        cronometroInterval = setInterval(() => updateCronometro(atendimentoBtn), 1000);
+    } else {
+        const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
+        clearInterval(cronometroInterval);
+        cronometroInterval = null;
+        atendimentoBtn.textContent = `Finalizado: ${timeSpent.toFixed(2)} min`;
+
+        // Aplicando a mesma lógica de cor no botão
+        if (timeSpent > parseFloat(document.getElementById('cycle-time').value)) {
+            atendimentoCell.style.backgroundColor = 'red';
+            atendimentoBtn.style.backgroundColor = 'red'; // Coloração do botão para 'red'
         } else {
-            const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-            clearInterval(cronometroInterval);
-            cronometroInterval = null;
-            atendimentoBtn.textContent = `Finalizado: ${timeSpent.toFixed(2)} min`;
-            atendimentoCell.style.backgroundColor = timeSpent > parseFloat(document.getElementById('cycle-time').value) ? 'red' : 'green';
+            atendimentoCell.style.backgroundColor = 'green';
+            atendimentoBtn.style.backgroundColor = 'green'; // Coloração do botão para 'green'
         }
     }
+}
 
-    // Função para atualizar o cronômetro
-    function updateCronometro(button) {
-        const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-        button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
-    }
+// Função para atualizar o cronômetro
+function updateCronometro(button) {
+    const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
+    button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
+}
 
 
     // Carregar dados ao carregar a página
