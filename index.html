@@ -181,72 +181,88 @@
     }
 
     // Função para simular o planejamento
-   // Função para simular o planejamento
 // Função para simular o planejamento
 function simulate() {
-    const rebocadorCapacity = parseFloat(document.getElementById('rebocador-capacity').value); // Capacidade do rebocador
-    const cycleTime = parseFloat(document.getElementById('cycle-time').value); // Tempo de ciclo do rebocador
+    const rebocadorCapacity = parseFloat(document.getElementById('rebocador-capacity').value);
+    const cycleTime = parseFloat(document.getElementById('cycle-time').value);
 
     let totalDemand = 0;
-    let setorDemands = [];
+    let setorConsumptions = [];
 
-    // Loop para calcular a demanda de cada máquina por ciclo do rebocador
+    // Loop para calcular o consumo de cada máquina
     for (let i = 1; i <= machineCounter; i++) {
-        const length = parseFloat(document.getElementById(`length-${i}`).value); // Comprimento da bobina
-        const speed = parseFloat(document.getElementById(`speed-${i}`).value);  // Velocidade de consumo da bobina
+        const length = parseFloat(document.getElementById(`length-${i}`).value);
+        const speed = parseFloat(document.getElementById(`speed-${i}`).value);
 
-        // Calcula o tempo de consumo de uma bobina
-        const consumptionTime = length / speed; // Tempo de consumo em minutos
+        // Calcula o tempo para consumir uma bobina
+        const timeToConsumeBobina = length / speed; // em minutos
 
         // Calcula a demanda por ciclo do rebocador
-        const demandPerCycle = Math.floor(consumptionTime / cycleTime); // Arredondar para baixo
-        setorDemands.push(demandPerCycle);
-        totalDemand += demandPerCycle; // Soma a demanda total
+        const demandPerCycle = Math.floor(timeToConsumeBobina / cycleTime); // arredondado para o valor inteiro mais próximo
+
+        setorConsumptions.push(demandPerCycle);
+        totalDemand += demandPerCycle;
     }
 
-    // Verificar se o rebocador pode atender à demanda total
-    const rebocadorCapacityPerCycle = rebocadorCapacity; // Rebocador atende capacidade por ciclo
-    const resultsDiv = document.getElementById('results');
+    // Capacidade do rebocador (bobinas/min)
+    const rebocadorCapacityPerMinute = rebocadorCapacity / cycleTime;
 
-    if (totalDemand > rebocadorCapacityPerCycle) {
+    // Verificação de capacidade
+    const resultsDiv = document.getElementById('results');
+    if (totalDemand > rebocadorCapacityPerMinute) {
         resultsDiv.innerHTML = `
             <p><strong>O rebocador não consegue atender à demanda total.</strong></p>
-            <p>Demanda total por ciclo: ${totalDemand} bobinas</p>
-            <p>Capacidade do rebocador por ciclo: ${rebocadorCapacityPerCycle} bobinas</p>
+            <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
+            <p>Capacidade do rebocador: ${rebocadorCapacityPerMinute.toFixed(2)} bobinas/min</p>
         `;
         return;
     }
 
-    // Simular viagens para um turno de 18 horas (1080 minutos)
-    const totalMinutes = 18 * 60;
-    const viagens = [];
-    const reservas = Array(machineCounter).fill(0); // Reserva para cada máquina
+    // Planejamento inicial das viagens
+    let viagens = [];
+    let reservas = Array(machineCounter).fill(0); // Reserva para cada máquina
+    let totalPerMachine = Array(machineCounter).fill(0); // Total por máquina
 
-    for (let t = 0; t < totalMinutes; t += cycleTime) {
+    for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
         let viagem = Array(machineCounter).fill(0); // Viagem para cada máquina
         let remainingCapacity = rebocadorCapacity;
 
+        // Lógica de distribuição com prioridades e reservas
         for (let i = 0; i < machineCounter; i++) {
-            const needed = setorDemands[i] - reservas[i];
-            const bobinas = Math.min(remainingCapacity, Math.max(0, needed));
+            const consumoSetor = setorConsumptions[i];
+            const needed = Math.max(0, consumoSetor * cycleTime - reservas[i]);
+            const bobinas = Math.min(remainingCapacity, Math.ceil(needed));
             viagem[i] = bobinas;
-            reservas[i] += bobinas - setorDemands[i];
+            reservas[i] += bobinas - consumoSetor * cycleTime;
             remainingCapacity -= bobinas;
+
+            // Acumula os totais
+            totalPerMachine[i] += bobinas;
+        }
+
+        // Incrementa o contador de ciclos
+        cycleCounter++;
+
+        // Se o número de ciclos atingir o cicloThreshold, zera a linha (substitui "0" por "F1")
+        if (cycleCounter >= cycleThreshold) {
+            viagem.fill("F1"); // Zera todos os valores da viagem com "F1"
+            cycleCounter = 0; // Reseta o contador de ciclos
         }
 
         viagens.push(viagem);
     }
 
-    // Renderizar os resultados
+    // Renderização dos resultados
     resultsDiv.innerHTML = `
-        <p><strong>Simulação concluída:</strong></p>
-        <p>Demanda total por ciclo: ${totalDemand} bobinas</p>
-        <p>Capacidade do rebocador por ciclo: ${rebocadorCapacityPerCycle} bobinas</p>
+        <p><strong>O rebocador atende à demanda.</strong></p>
+        <p>Demanda total: ${totalDemand.toFixed(2)} bobinas/min</p>
+        <p>Capacidade do rebocador: ${rebocadorCapacityPerMinute.toFixed(2)} bobinas/min</p>
         <table>
             <thead>
                 <tr>
                     <th>#</th>
-                    ${machineNames.map(name => `<th>${name}</th>`).join('')}
+                    ${machineNames.map(name => `<th>${name}</th>`).join('')} 
+                    <th>Atendimento</th>
                 </tr>
             </thead>
             <tbody>
@@ -254,9 +270,17 @@ function simulate() {
                     <tr>
                         <td>${index + 1}</td>
                         ${viagem.map(bobinas => `<td>${bobinas}</td>`).join('')}
+                        <td><button onclick="toggleCronometro(${index})">Atender</button></td>
                     </tr>
                 `).join('')}
             </tbody>
+            <tfoot>
+                <tr>
+                    <td><strong>Total</strong></td>
+                    ${totalPerMachine.map(total => `<td><strong>${total}</strong></td>`).join('')}
+                    <td></td>
+                </tr>
+            </tfoot>
         </table>
     `;
 
