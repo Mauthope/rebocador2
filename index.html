@@ -174,13 +174,6 @@
         }
     }
 
-    // Função para limpar dados do localStorage
-    function clearMachineData() {
-        localStorage.removeItem('machineData');
-        alert("Dados limpos com sucesso!");
-        location.reload(); // Atualiza a página para refletir as mudanças
-    }
-
     // Função para simular o planejamento
     function simulate() {
         const rebocadorCapacity = parseFloat(document.getElementById('rebocador-capacity').value);
@@ -196,7 +189,7 @@
         for (let i = 1; i <= machineCounter; i++) {
             const length = parseFloat(document.getElementById(`length-${i}`).value);
             const speed = parseFloat(document.getElementById(`speed-${i}`).value);
-            const consumption = 1 / (length / speed);
+            const consumption = length / speed; // Tempo de consumo da máquina (minutos)
             setorConsumptions.push(consumption);
             totalDemand += consumption;
         }
@@ -220,6 +213,9 @@
         let reservas = Array(machineCounter).fill(0); // Reserva para cada máquina
         let totalPerMachine = Array(machineCounter).fill(0); // Total por máquina
 
+        // Lógica de distribuição considerando o conceito de "pular ciclos"
+        let totalTimePassed = 0;
+
         for (let t = 0; t < 18 * 60; t += cycleTime) { // Ciclo de 18 horas
             let viagem = Array(machineCounter).fill(0); // Viagem para cada máquina
             let remainingCapacity = rebocadorCapacity;
@@ -227,10 +223,11 @@
             // Lógica de distribuição com prioridades e reservas
             for (let i = 0; i < machineCounter; i++) {
                 const consumoSetor = setorConsumptions[i];
-                const needed = Math.max(0, consumoSetor * cycleTime - reservas[i]);
+                const needed = Math.max(0, consumoSetor - reservas[i]);
                 const bobinas = Math.min(remainingCapacity, Math.ceil(needed));
+
                 viagem[i] = bobinas;
-                reservas[i] += bobinas - consumoSetor * cycleTime;
+                reservas[i] += bobinas - consumoSetor;
                 remainingCapacity -= bobinas;
 
                 // Acumula os totais
@@ -247,6 +244,13 @@
             }
 
             viagens.push(viagem);
+            totalTimePassed += cycleTime;
+
+            // Se o tempo de consumo total já passou, verifica se pode pular o ciclo
+            if (totalTimePassed >= totalDemand) {
+                totalTimePassed -= totalDemand;
+                cycleCounter++;  // Pula um ciclo se necessário
+            }
         }
 
         // Renderização dos resultados
@@ -280,76 +284,30 @@
                 </tfoot>
             </table>
         `;
-
-        // Aplicar a coloração azul para células com valores diferentes de "F1"
-        const rows = document.querySelectorAll('table tbody tr');
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            for (let i = 1; i < cells.length - 1; i++) {  
-                const value = cells[i].textContent.trim();  // Usando trim() para evitar espaços extras
-                if (value === "F1") {
-                    cells[i].style.backgroundColor = 'yellow';  // Cor amarela se for "F1"
-                } else if (value !== "0") {
-                    cells[i].style.backgroundColor = 'blue';  // Cor azul se não for "0"
-                }
-            }
-        });
     }
 
-    // Função para alternar o cronômetro de atendimento
+    // Função para alternar o cronômetro
     function toggleCronometro(index) {
-        const viagem = document.querySelectorAll('table tr')[index + 1];
-        const atendimentoBtn = viagem.querySelector('button');
-        const atendimentoCell = viagem.querySelector('td:last-child');
-
-        if (atendimentoBtn.textContent === 'Atender') {
-            atendimentoBtn.textContent = 'Parar';
-            atendimentoCell.style.backgroundColor = 'red';  // Cor vermelha ao começar atendimento
-            startCronometro();
+        if (activeCronometer === index) {
+            clearInterval(cronometroInterval);
+            activeCronometer = null;
         } else {
-            atendimentoBtn.textContent = 'Atender';
-            atendimentoCell.style.backgroundColor = 'green';  // Cor verde ao parar atendimento
-            stopCronometro();
+            activeCronometer = index;
+            cronometroStartTime = Date.now();
+            cronometroInterval = setInterval(updateCronometro, 1000);
         }
     }
 
-   // Função para alternar o cronômetro de atendimento
-function toggleCronometro(index) {
-    const viagem = document.querySelectorAll('table tr')[index + 1];
-    const atendimentoBtn = viagem.querySelector('button');
-    const atendimentoCell = viagem.querySelector('td:last-child');
-
-    if (atendimentoBtn.textContent === "Atender") {
-        atendimentoBtn.textContent = "Finalizar";
-        cronometroStartTime = Date.now();
-        cronometroInterval = setInterval(() => updateCronometro(atendimentoBtn), 1000);
-    } else {
-        const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-        clearInterval(cronometroInterval);
-        cronometroInterval = null;
-        atendimentoBtn.textContent = `Finalizado: ${timeSpent.toFixed(2)} min`;
-
-        // Aplicando a mesma lógica de cor no botão
-        if (timeSpent > parseFloat(document.getElementById('cycle-time').value)) {
-            atendimentoCell.style.backgroundColor = 'red';
-            atendimentoBtn.style.backgroundColor = 'red'; // Coloração do botão para 'red'
-        } else {
-            atendimentoCell.style.backgroundColor = 'green';
-            atendimentoBtn.style.backgroundColor = 'green'; // Coloração do botão para 'green'
-        }
+    // Função para atualizar o cronômetro
+    function updateCronometro() {
+        const elapsed = Math.floor((Date.now() - cronometroStartTime) / 1000);
+        document.getElementById('timeDisplay').textContent = `${elapsed} segundos`;
     }
-}
 
-// Função para atualizar o cronômetro
-function updateCronometro(button) {
-    const timeSpent = (Date.now() - cronometroStartTime) / 60000; // Tempo em minutos
-    button.textContent = `Em andamento: ${timeSpent.toFixed(2)} min`;
-}
-
-
-    // Carregar dados ao carregar a página
-    window.onload = loadMachineData;
+    // Carregar dados ao iniciar
+    loadMachineData();
 </script>
+
 
 
 
