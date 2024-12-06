@@ -191,7 +191,9 @@
             const speed = parseFloat(document.getElementById(`speed-${i}`).value);
             const consumption = length / speed; // Tempo de consumo da máquina (minutos)
             setorConsumptions.push(consumption);
-            totalDemand += consumption;
+            
+            // Calcula a demanda como a soma das inversões dos tempos de consumo
+            totalDemand += 1 / consumption; 
         }
 
         // Capacidade do rebocador (bobinas/min)
@@ -288,11 +290,11 @@
 
     // Função para alternar o cronômetro
     function toggleCronometro(index) {
-        if (activeCronometer === index) {
+        if (activeCronometro === index) {
             clearInterval(cronometroInterval);
-            activeCronometer = null;
+            activeCronometro = null;
         } else {
-            activeCronometer = index;
+            activeCronometro = index;
             cronometroStartTime = Date.now();
             cronometroInterval = setInterval(updateCronometro, 1000);
         }
@@ -304,9 +306,10 @@
         document.getElementById('timeDisplay').textContent = `${elapsed} segundos`;
     }
 
-    // Carregar dados ao iniciar
+    // Carregar dados no início
     loadMachineData();
 </script>
+
 
 
 
